@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroMatch - Garantías y Seguridad</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #1e3a2e;
+            --primary-medium: #4a7c59;
+            --accent-light: #90EE90;
+            --background-overlay: rgba(255, 255, 255, 0.92);
+            --glass-backdrop: rgba(255, 255, 255, 0.15);
+            --shadow-primary: rgba(30, 58, 46, 0.15);
+            --gradient-primary: linear-gradient(135deg, #4a7c59, #1e3a2e);
+            --gradient-accent: linear-gradient(135deg, #90EE90, #4a7c59);
+            --glass-border: rgba(144, 238, 144, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--primary-dark);
+            background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(144,238,144,0.05));
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .guarantees-section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 4rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 0.7rem 1.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-medium);
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .guarantees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .guarantee-card {
+            background: var(--background-overlay);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 25px;
+            border: 2px solid var(--glass-border);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(30, 58, 46, 0.1);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease forwards;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .guarantee-card:nth-child(1) { animation-delay: 0.1s; }
+        .guarantee-card:nth-child(2) { animation-delay: 0.2s; }
+        .guarantee-card:nth-child(3) { animation-delay: 0.3s; }
+        .guarantee-card:nth-child(4) { animation-delay: 0.4s; }
+        .guarantee-card:nth-child(5) { animation-delay: 0.5s; }
+        .guarantee-card:nth-child(6) { animation-delay: 0.6s; }
+        .guarantee-card:nth-child(7) { animation-delay: 0.7s; }
+        .guarantee-card:nth-child(8) { animation-delay: 0.8s; }
+        .guarantee-card:nth-child(9) { animation-delay: 0.9s; }
+        .guarantee-card:nth-child(10) { animation-delay: 1s; }
+        .guarantee-card:nth-child(11) { animation-delay: 1.1s; }
+        .guarantee-card:nth-child(12) { animation-delay: 1.2s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .guarantee-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-accent);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .guarantee-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 60px rgba(30, 58, 46, 0.2);
+            border-color: var(--accent-light);
+        }
+
+        .guarantee-card:hover::after {
+            transform: scaleX(1);
+        }
+
+        .guarantee-icon-box {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-primary);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 2rem;
+            box-shadow: 0 10px 25px rgba(74, 124, 89, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .guarantee-card:hover .guarantee-icon-box {
+            transform: scale(1.1) rotate(-8deg);
+            box-shadow: 0 15px 35px rgba(74, 124, 89, 0.5);
+        }
+
+        .guarantee-card h3 {
+            color: var(--primary-dark);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        .guarantee-card p {
+            color: #555;
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .guarantee-features {
+            list-style: none;
+            margin: 1rem 0;
+        }
+
+        .guarantee-features li {
+            padding: 0.6rem 0;
+            color: #666;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .guarantee-features li:hover {
+            color: var(--primary-medium);
+            padding-left: 0.5rem;
+        }
+
+        .guarantee-features li i {
+            color: var(--accent-light);
+            font-size: 1rem;
+            min-width: 18px;
+            margin-top: 0.2rem;
+        }
+
+        .guarantee-highlight {
+            background: rgba(144, 238, 144, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .guarantee-highlight:hover {
+            background: rgba(144, 238, 144, 0.2);
+            transform: translateX(5px);
+        }
+
+        .guarantee-highlight i {
+            color: var(--primary-medium);
+            font-size: 1.3rem;
+            min-width: 24px;
+        }
+
+        .guarantee-highlight span {
+            color: #555;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .guarantee-highlight strong {
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+
+        .trust-banner {
+            margin-top: 4rem;
+            background: var(--gradient-primary);
+            border-radius: 25px;
+            padding: 3rem 2rem;
+            text-align: center;
+            color: white;
+            box-shadow: 0 20px 50px rgba(30, 58, 46, 0.3);
+            animation: fadeInUp 1s ease 1.3s backwards;
+        }
+
+        .trust-banner h3 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .trust-banner p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            line-height: 1.7;
+        }
+
+        .trust-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .trust-stat {
+            text-align: center;
+        }
+
+        .trust-stat-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .trust-stat-label {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .guarantees-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .guarantee-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .trust-banner {
+                padding: 2rem 1.5rem;
+            }
+
+            .trust-banner h3 {
+                font-size: 1.5rem;
+            }
+
+            .trust-stats {
+                gap: 2rem;
+            }
+
+            .trust-stat-number {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="guarantees-section">
+        <div class="section-header">
+            <div class="section-tag">
+                <i class="fas fa-shield-alt"></i>
+                Garantías
+            </div>
+            <h2 class="section-title">Nuestro Compromiso Contigo</h2>
+            <p class="section-description">
+                Tu seguridad y confianza son nuestra prioridad. Conoce los compromisos que asumimos para brindarte la mejor experiencia
+            </p>
+        </div>
+
+        <div class="guarantees-grid">
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3>Privacidad de Datos</h3>
+                <p>
+                    Tu información personal está protegida. Solo compartimos tus datos con empleadores cuando tú decides postular a una oferta específica.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Tú decides qué información compartir</li>
+                    <li><i class="fas fa-check"></i> No vendemos datos a terceros</li>
+                    <li><i class="fas fa-check"></i> Conexión segura (HTTPS)</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-lock"></i>
+                    <span>Control total sobre <strong>tu información</strong></span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>Empresas Verificadas</h3>
+                <p>
+                    Validamos la información de cada empresa antes de permitirles publicar ofertas, verificando datos de registro y contacto.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Validación de datos empresariales</li>
+                    <li><i class="fas fa-check"></i> Verificación de información de contacto</li>
+                    <li><i class="fas fa-check"></i> Revisión de ofertas publicadas</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-building"></i>
+                    <span><strong>Proceso de verificación</strong> empresarial</span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <h3>Servicio Gratuito</h3>
+                <p>
+                    AgroMatch es completamente gratis para trabajadores. No cobramos por registrarte, buscar empleos o postular a ofertas.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Registro sin costo</li>
+                    <li><i class="fas fa-check"></i> Postulaciones ilimitadas</li>
+                    <li><i class="fas fa-check"></i> Acceso completo a la plataforma</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-gift"></i>
+                    <span><strong>Sin costos</strong> para trabajadores</span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3>Soporte Disponible</h3>
+                <p>
+                    Nuestro equipo está disponible para ayudarte con dudas sobre el uso de la plataforma, tu perfil o el proceso de postulación.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Soporte por correo electrónico</li>
+                    <li><i class="fas fa-check"></i> Chat de ayuda en línea</li>
+                    <li><i class="fas fa-check"></i> Guías y tutoriales disponibles</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-envelope"></i>
+                    <span>Contacto por <strong>correo y chat</strong></span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3>Sistema de Valoraciones</h3>
+                <p>
+                    Los trabajadores pueden dejar opiniones sobre su experiencia con las empresas, ayudando a otros usuarios a tomar decisiones informadas.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Calificaciones de empresas</li>
+                    <li><i class="fas fa-check"></i> Comentarios de experiencias reales</li>
+                    <li><i class="fas fa-check"></i> Sistema de reporte de problemas</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-comments"></i>
+                    <span><strong>Opiniones reales</strong> de usuarios</span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <h3>Información Clara</h3>
+                <p>
+                    Nos esforzamos por asegurar que todas las ofertas incluyan información completa sobre el puesto, requisitos y condiciones laborales.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Descripción detallada del puesto</li>
+                    <li><i class="fas fa-check"></i> Requisitos claramente especificados</li>
+                    <li><i class="fas fa-check"></i> Información de contacto visible</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-info-circle"></i>
+                    <span><strong>Transparencia</strong> en ofertas</span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h3>Seguimiento de Postulaciones</h3>
+                <p>
+                    Mantén un registro completo de todas las ofertas a las que has postulado y el estado de cada aplicación en tu panel personal.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Historial de postulaciones</li>
+                    <li><i class="fas fa-check"></i> Estado de aplicaciones</li>
+                    <li><i class="fas fa-check"></i> Organización por fecha</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-list"></i>
+                    <span><strong>Gestión fácil</strong> de aplicaciones</span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Acceso Multiplataforma</h3>
+                <p>
+                    Usa AgroMatch desde cualquier dispositivo: computadora, tablet o smartphone. Tu información se sincroniza automáticamente.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Diseño responsive</li>
+                    <li><i class="fas fa-check"></i> Compatible con todos los navegadores</li>
+                    <li><i class="fas fa-check"></i> Sincronización automática</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-tablet-alt"></i>
+                    <span>Acceso desde <strong>cualquier dispositivo</strong></span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <h3>Notificaciones Personalizadas</h3>
+                <p>
+                    Recibe alertas por correo sobre nuevas ofertas que coincidan con tu perfil y actualizaciones sobre tus postulaciones.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Alertas de nuevas ofertas</li>
+                    <li><i class="fas fa-check"></i> Notificaciones de respuestas</li>
+                    <li><i class="fas fa-check"></i> Control de preferencias</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-envelope-open"></i>
+                    <span><strong>Mantente informado</strong> siempre</span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>Actualizaciones Constantes</h3>
+                <p>
+                    Mejoramos continuamente la plataforma con nuevas funciones y optimizaciones basadas en los comentarios de nuestros usuarios.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Mejoras periódicas del sistema</li>
+                    <li><i class="fas fa-check"></i> Nuevas funcionalidades</li>
+                    <li><i class="fas fa-check"></i> Escuchamos tu retroalimentación</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-sync"></i>
+                    <span><strong>Innovación continua</strong> para ti</span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <h3>Búsqueda Inteligente</h3>
+                <p>
+                    Encuentra oportunidades cercanas a tu ubicación y filtra por tipo de trabajo, experiencia requerida y condiciones específicas.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Filtros por ubicación</li>
+                    <li><i class="fas fa-check"></i> Búsqueda por especialidad</li>
+                    <li><i class="fas fa-check"></i> Ordenamiento personalizado</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-search-location"></i>
+                    <span><strong>Encuentra empleos</strong> cerca de ti</span>
+                </div>
+            </div>
+
+            <div class="guarantee-card">
+                <div class="guarantee-icon-box">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h3>Recursos Educativos</h3>
+                <p>
+                    Accede a guías, consejos y recursos que te ayudarán a mejorar tu perfil profesional y tener éxito en tus postulaciones.
+                </p>
+                <ul class="guarantee-features">
+                    <li><i class="fas fa-check"></i> Consejos para entrevistas</li>
+                    <li><i class="fas fa-check"></i> Cómo mejorar tu perfil</li>
+                    <li><i class="fas fa-check"></i> Guías de mejores prácticas</li>
+                </ul>
+                <div class="guarantee-highlight">
+                    <i class="fas fa-book-open"></i>
+                    <span><strong>Aprende y crece</strong> profesionalmente</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="trust-banner">
+            <h3>Nuestra Misión es Tu Confianza</h3>
+            <p>
+                Trabajamos cada día para mejorar la experiencia de búsqueda de empleo agrícola en Colombia, conectando trabajadores con oportunidades reales de forma segura y transparente.
+            </p>
+            <div class="trust-stats">
+                <div class="trust-stat">
+                    <span class="trust-stat-number">100%</span>
+                    <span class="trust-stat-label">Gratuito</span>
+                </div>
+                <div class="trust-stat">
+                    <span class="trust-stat-number">24/7</span>
+                    <span class="trust-stat-label">Disponible</span>
+                </div>
+                <div class="trust-stat">
+                    <span class="trust-stat-number">Seguro</span>
+                    <span class="trust-stat-label">Verificado</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

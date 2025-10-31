@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>AgroMatch - Recomendaciones para Ti</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="../assent/css/recomendaciones.css">
+</head>
+<body>
+    <!-- Overlay para modales -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Modal para confirmar postulación -->
+    <div class="modal" id="applyJobModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirmar Postulación</h2>
+                <button class="close-btn" onclick="closeApplyModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres postularte a este trabajo?</p>
+                <div id="jobDetailsForApplication"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeApplyModal()">
+                    Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="confirmApplication()" id="confirmApplyBtn">
+                    <i class="fas fa-paper-plane"></i> Confirmar Postulación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalle de Recomendación -->
+    <div class="modal" id="detailModal" style="display: none;">
+        <div class="modal-content detail-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> ¿Por qué esta recomendación?</h2>
+                <button class="close-btn" onclick="closeDetailModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="recommendationDetails"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="closeDetailModal()">
+                    <i class="fas fa-check"></i> Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <img src="../assent/img/logo.jpg" alt="AgroMatch Logo" style="height:40px;">
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </button>
+                <div class="notification-icon" onclick="showNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">2</span>
+                </div>
+                <div class="profile-menu profile-photo" id="profileMenuBtn" onclick="window.location.href='index-trabajador.html'">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="recommendations-container">
+            <!-- Hero Section -->
+            <div class="hero-section">
+                <div class="hero-content">
+                    <h1>
+                        <i class="fas fa-lightbulb"></i>
+                        Trabajos Recomendados para Ti
+                    </h1>
+                    <p class="hero-description">
+                        Basado en tus habilidades, experiencia y trabajos anteriores, hemos seleccionado las mejores oportunidades para ti.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Filtros de Recomendaciones -->
+            <div class="filter-section">
+                <h3><i class="fas fa-filter"></i> Filtrar por compatibilidad</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterByMatch(this, 'all')">
+                        <i class="fas fa-th"></i> Todas
+                    </button>
+                    <button class="filter-btn" onclick="filterByMatch(this, 'excellent')">
+                        <i class="fas fa-star"></i> Excelente (90%+)
+                    </button>
+                    <button class="filter-btn" onclick="filterByMatch(this, 'good')">
+                        <i class="fas fa-thumbs-up"></i> Buena (70-89%)
+                    </button>
+                    <button class="filter-btn" onclick="filterByMatch(this, 'moderate')">
+                        <i class="fas fa-check"></i> Moderada (50-69%)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estadísticas de Perfil -->
+            <div class="profile-stats-section">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="skillCount">0</div>
+                        <div class="stat-label">Habilidades Registradas</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="jobsCompleted">0</div>
+                        <div class="stat-label">Trabajos Completados</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="recommendationsCount">0</div>
+                        <div class="stat-label">Recomendaciones Disponibles</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-container" id="loadingState">
+                <div class="loader"></div>
+                <p>Analizando tu perfil y generando recomendaciones...</p>
+            </div>
+
+            <!-- Lista de Recomendaciones -->
+            <div class="recommendations-list" id="recommendationsList" style="display: none;">
+                <!-- Las recomendaciones se cargarán aquí dinámicamente -->
+            </div>
+
+            <!-- Estado Vacío -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>No hay recomendaciones disponibles</h3>
+                <p>No encontramos trabajos que coincidan con tu perfil en este momento.</p>
+                <div class="empty-actions">
+                    <button class="btn btn-primary" onclick="updateProfile()">
+                        <i class="fas fa-user-edit"></i> Actualizar mi Perfil
+                    </button>
+                    <button class="btn btn-secondary" onclick="viewAllJobs()">
+                        <i class="fas fa-briefcase"></i> Ver Todos los Trabajos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estado Sin Habilidades -->
+            <div class="no-skills-state" id="noSkillsState" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <h3>Completa tu perfil para recibir recomendaciones</h3>
+                <p>Necesitas agregar al menos una habilidad y completar tu información de experiencia para que podamos recomendarte trabajos.</p>
+                <div class="empty-actions">
+                    <button class="btn btn-primary" onclick="goToProfile()">
+                        <i class="fas fa-user-plus"></i> Completar mi Perfil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/recomendaciones.js"></script>
+</body>
+</html>

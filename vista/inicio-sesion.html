@@ -1,0 +1,1675 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroMatch - Plataforma de Empleos Agrícolas</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #1e3a2e;
+            --primary-medium: #4a7c59;
+            --accent-light: #90EE90;
+            --background-overlay: rgba(255, 255, 255, 0.92);
+            --glass-backdrop: rgba(255, 255, 255, 0.15);
+            --shadow-primary: rgba(30, 58, 46, 0.15);
+            --gradient-primary: linear-gradient(135deg, #4a7c59, #1e3a2e);
+            --gradient-accent: linear-gradient(135deg, #90EE90, #4a7c59);
+            --glass-border: rgba(144, 238, 144, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--primary-dark);
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        .header {
+            background: var(--background-overlay);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px var(--shadow-primary);
+        }
+
+        .header.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(25px);
+            box-shadow: 0 12px 40px rgba(30, 58, 46, 0.2);
+        }
+
+        .navbar {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 2rem;
+            position: relative;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-container {
+            position: relative;
+        }
+
+        .logo-icon {
+            width: 120px;
+            height: 50px;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(74, 124, 89, 0.4);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 8px;
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .logo-icon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+        }
+
+        .logo:hover .logo-icon::before {
+            animation: logoShine 1s ease-in-out;
+        }
+
+        @keyframes logoShine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+        }
+
+        .logo-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: var(--gradient-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--primary-dark);
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(144, 238, 144, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+            align-items: center;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--primary-dark);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            padding: 0.8rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-menu a::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            color: var(--primary-medium);
+            transform: translateY(-2px);
+        }
+
+        .nav-menu a:hover::before,
+        .nav-menu a.active::before {
+            width: 100%;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.9rem 2rem;
+            border: none;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-login {
+            background: transparent;
+            color: var(--primary-medium);
+            border: 2px solid var(--primary-medium);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-login:hover {
+            background: var(--primary-medium);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(74, 124, 89, 0.4);
+        }
+
+        .btn-register {
+            background: var(--gradient-primary);
+            color: white;
+            border: 2px solid transparent;
+            box-shadow: 0 8px 25px rgba(74, 124, 89, 0.3);
+        }
+
+        .btn-register:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(74, 124, 89, 0.5);
+            background: linear-gradient(135deg, #5a8c69, #2e4a3e);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            background: 
+                linear-gradient(135deg, 
+                    rgba(30, 58, 46, 0.8), 
+                    rgba(74, 124, 89, 0.7),
+                    rgba(144, 238, 144, 0.6)
+                ),
+                url('assets/img/campo-fondo.jpg') center/cover no-repeat;
+            background-attachment: fixed;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(144, 238, 144, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(74, 124, 89, 0.3) 0%, transparent 50%),
+                linear-gradient(135deg, rgba(30, 58, 46, 0.1), rgba(144, 238, 144, 0.1));
+            z-index: 1;
+            animation: heroAnimation 20s ease-in-out infinite;
+        }
+
+        @keyframes heroAnimation {
+            0%, 100% { 
+                background-position: 0% 50%, 100% 50%, 0% 0%; 
+                opacity: 0.8;
+            }
+            50% { 
+                background-position: 100% 50%, 0% 50%, 100% 100%; 
+                opacity: 1;
+            }
+        }
+
+        .hero-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(144, 238, 144, 0.6);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; width: 4px; height: 4px; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 2s; width: 6px; height: 6px; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 4s; width: 3px; height: 3px; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 6s; width: 5px; height: 5px; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 8s; width: 4px; height: 4px; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 10s; width: 6px; height: 6px; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 12s; width: 3px; height: 3px; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 14s; width: 5px; height: 5px; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 16s; width: 4px; height: 4px; }
+
+        @keyframes float {
+            0% { 
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { 
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .hero-content {
+            max-width: 900px;
+            z-index: 3;
+            position: relative;
+            padding: 2rem;
+            animation: heroContentSlide 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes heroContentSlide {
+            from {
+                opacity: 0;
+                transform: translateY(60px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            padding: 0.8rem 2rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.95);
+            animation: badgeGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes badgeGlow {
+            from { box-shadow: 0 0 20px rgba(144, 238, 144, 0.3); }
+            to { box-shadow: 0 0 40px rgba(144, 238, 144, 0.6); }
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 900;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #ffffff, #90EE90);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            margin-bottom: 2rem;
+            opacity: 0.95;
+            font-weight: 400;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            line-height: 1.6;
+        }
+
+        .hero-description {
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            margin-bottom: 3rem;
+            opacity: 0.9;
+            line-height: 1.8;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-container {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .cta-button {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary-dark);
+            padding: 1.4rem 3.5rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: -1;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+
+        .cta-button:hover::before {
+            left: 0;
+        }
+
+        .cta-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px);
+        }
+
+        .cta-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: white;
+            transform: translateY(-5px);
+        }
+
+        /* Mission Section */
+        .mission-section {
+            padding: 8rem 2rem;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.95), 
+                rgba(144, 238, 144, 0.1)
+            );
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mission-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: var(--gradient-accent);
+            box-shadow: 0 0 20px rgba(144, 238, 144, 0.5);
+        }
+
+        .mission-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5rem;
+            align-items: center;
+        }
+
+        .mission-image {
+            position: relative;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(30, 58, 46, 0.2);
+            transform: perspective(1000px) rotateY(-5deg);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mission-image:hover {
+            transform: perspective(1000px) rotateY(0deg) scale(1.02);
+            box-shadow: 0 35px 80px rgba(30, 58, 46, 0.3);
+        }
+
+        .mission-image img {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .mission-image:hover img {
+            transform: scale(1.1);
+        }
+
+        .mission-image::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .mission-image:hover::after {
+            opacity: 0.1;
+        }
+
+        .mission-content {
+            animation: fadeInUp 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mission-content h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: var(--primary-dark);
+            margin-bottom: 2rem;
+            line-height: 1.3;
+            font-weight: 800;
+            position: relative;
+        }
+
+        .mission-content h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: var(--gradient-accent);
+            border-radius: 2px;
+        }
+
+        .mission-content p {
+            font-size: 1.3rem;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .mission-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .mission-stat {
+            text-align: center;
+            padding: 1.5rem;
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+        }
+
+        .mission-stat:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(74, 124, 89, 0.2);
+        }
+
+        .mission-stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-medium);
+            margin-bottom: 0.5rem;
+        }
+
+        .mission-stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 8rem 2rem;
+            background: linear-gradient(135deg, 
+                rgba(30, 58, 46, 0.02), 
+                rgba(144, 238, 144, 0.05)
+            );
+        }
+
+        .features-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 0.8rem 2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-medium);
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            color: var(--primary-dark);
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 3rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: var(--background-overlay);
+            backdrop-filter: blur(20px);
+            padding: 3rem 2.5rem;
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(30, 58, 46, 0.1);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(144, 238, 144, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-15px) rotateX(5deg);
+            box-shadow: 0 25px 60px rgba(30, 58, 46, 0.2);
+            border-color: rgba(144, 238, 144, 0.5);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-primary);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            color: white;
+            font-size: 2rem;
+            box-shadow: 0 15px 35px rgba(74, 124, 89, 0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-icon::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            width: 300%;
+            height: 300%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: all 0.6s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 20px 50px rgba(74, 124, 89, 0.6);
+        }
+
+        .feature-card:hover .feature-icon::before {
+            top: -50%;
+            left: -50%;
+        }
+
+        .feature-card h3 {
+            color: var(--primary-dark);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+
+        /* Footer */
+        .footer {
+            background: linear-gradient(135deg, var(--primary-dark), #2c5a3f);
+            color: white;
+            padding: 5rem 2rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(144, 238, 144, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(74, 124, 89, 0.1) 0%, transparent 50%);
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 4rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .footer-brand {
+            margin-bottom: 2rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-logo-icon {
+            width: 120px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(144, 238, 144, 0.3);
+            padding: 8px;
+        }
+
+        .footer-logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .footer-description {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: var(--accent-light);
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 1rem;
+        }
+
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-section ul li a:hover {
+            color: var(--accent-light);
+            transform: translateX(5px);
+        }
+
+        .contact-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .contact-info:hover {
+            color: var(--accent-light);
+            transform: translateX(5px);
+        }
+
+        .contact-info i {
+            margin-right: 1rem;
+            color: var(--accent-light);
+            width: 20px;
+            font-size: 1.1rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            color: white;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.2rem;
+        }
+
+        .social-links a:hover {
+            background: var(--accent-light);
+            color: var(--primary-dark);
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 8px 25px rgba(144, 238, 144, 0.4);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(144, 238, 144, 0.3);
+            margin-top: 3rem;
+            padding-top: 2rem;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slide-in-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide-in-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .slide-in-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide-in-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(74, 124, 89, 0.1);
+            color: var(--primary-medium);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .features-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+            
+            .footer-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 3rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .nav-menu {
+                position: fixed;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--background-overlay);
+                backdrop-filter: blur(20px);
+                border-top: 1px solid var(--glass-border);
+                flex-direction: column;
+                padding: 2rem;
+                gap: 1.5rem;
+                transform: translateY(-100vh);
+                transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }
+
+            .nav-menu.active {
+                transform: translateY(0);
+            }
+
+            .navbar {
+                flex-wrap: wrap;
+                padding: 1rem;
+            }
+
+            .auth-buttons {
+                order: 3;
+                width: 100%;
+                margin-top: 1rem;
+                flex-direction: column;
+            }
+
+            .mission-container {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+                text-align: center;
+            }
+
+            .mission-image {
+                transform: none;
+                order: 2;
+            }
+
+            .mission-content {
+                order: 1;
+            }
+
+            .cta-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .cta-button,
+            .cta-secondary {
+                width: 100%;
+                max-width: 300px;
+                text-align: center;
+                justify-content: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .hero-content {
+                padding: 1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 0.8rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+
+            .hero-content {
+                padding: 0.5rem;
+            }
+
+            .mission-section,
+            .features-section {
+                padding: 4rem 1rem;
+            }
+
+            .feature-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .feature-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+
+            .footer {
+                padding: 3rem 1rem 2rem;
+            }
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+
+        .hidden { display: none !important; }
+        .visible { display: block !important; }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gradient-primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--glass-border);
+            border-top: 2px solid var(--primary-medium);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" id="header">
+        <nav class="navbar">
+            <a href="#" class="logo">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <img src="../assent/img/logo.jpg" alt="AgroMatch Logo">
+                    </div>
+                </div>
+            </a>
+            
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#" class="active">INICIO</a></li>
+                <li><a href="../vista/Beneficio.html">BENEFICIOS</a></li>
+                <li><a href="../vista/compara.html">COMPARA</a></li>
+                <li><a href="../vista/Garantias.html">GARANTÍAS</a></li>
+            </ul>
+            
+            <div class="auth-buttons">
+                <a href="../vista/login-trabajador.html" class="btn btn-login">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Iniciar Sesión
+                </a>
+                <a href="../vista/seleccion-rol.html" class="btn btn-register">
+                    <i class="fas fa-user-plus"></i>
+                    Registro
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+        
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-leaf"></i>
+                Conectamos el Campo con el Futuro
+            </div>
+            
+            <h1 class="hero-title">
+                Oportunidades Agrícolas
+            </h1>
+            
+            <p class="hero-subtitle">
+                La plataforma líder en empleos del sector agrícola
+            </p>
+            
+            <p class="hero-description">
+                Transformamos la forma en que trabajadores especializados encuentran oportunidades 
+                en el sector agrícola. Una plataforma moderna, intuitiva y eficiente que conecta 
+                talento con empleadores comprometidos con el futuro del campo.
+            </p>
+            
+            <div class="cta-container">
+                <a href="#nosotros" class="cta-button">
+                    <i class="fas fa-rocket"></i>
+                    Descubre Más
+                </a>
+                <a href="../vista/seleccion-rol.html" class="cta-button cta-secondary">
+                    <i class="fas fa-users"></i>
+                    Únete Ahora
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section id="nosotros" class="mission-section">
+        <div class="mission-container">
+            <div class="mission-image slide-in-left">
+                <img src="../assent/img/agricultor2.jpg" alt="Agricultura Sostenible" loading="lazy">
+            </div>
+            
+            <div class="mission-content slide-in-right">
+                <h2>Por una agricultura más conectada y próspera</h2>
+                <p>
+                    En AgroMatch creemos que la agricultura es el futuro de nuestro país. 
+                    Hemos creado la plataforma más completa y moderna para conectar 
+                    trabajadores especializados con oportunidades laborales en el sector agrícola.
+                </p>
+                <p>
+                    Nuestra misión es digitalizar y modernizar el proceso de búsqueda de empleo 
+                    en el campo, facilitando conexiones significativas entre empleadores y trabajadores.
+                </p>
+                
+                <div class="mission-stats">
+                    <div class="mission-stat">
+                        <div class="mission-stat-number">1000+</div>
+                        <div class="mission-stat-label">Empleos Activos</div>
+                    </div>
+                    <div class="mission-stat">
+                        <div class="mission-stat-number">500+</div>
+                        <div class="mission-stat-label">Empresas</div>
+                    </div>
+                    <div class="mission-stat">
+                        <div class="mission-stat-number">5000+</div>
+                        <div class="mission-stat-label">Trabajadores</div>
+                    </div>
+                    <div class="mission-stat">
+                        <div class="mission-stat-number">95%</div>
+                        <div class="mission-stat-label">Satisfacción</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="servicios" class="features-section">
+        <div class="features-container">
+            <div class="section-header fade-in">
+                <div class="section-tag">
+                    <i class="fas fa-star"></i>
+                    Nuestros Servicios
+                </div>
+                <h2 class="section-title">¿Por qué elegir AgroMatch?</h2>
+                <p class="section-description">
+                    Ofrecemos las herramientas más avanzadas para revolucionar la búsqueda 
+                    de empleo en el sector agrícola, con tecnología de punta y un enfoque humano.
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon-container">
+                        <div class="feature-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                    </div>
+                    <h3>Empleos Especializados</h3>
+                    <p>
+                        Conectamos profesionales con oportunidades específicas en diferentes 
+                        áreas de la agricultura moderna, desde cultivos tradicionales hasta 
+                        agricultura de precisión.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon-container">
+                        <div class="feature-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                    </div>
+                    <h3>Conexión Directa</h3>
+                    <p>
+                        Plataforma intuitiva que facilita el contacto directo entre empleadores 
+                        y trabajadores calificados, eliminando intermediarios y agilizando procesos.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon-container">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                    <h3>Crecimiento Profesional</h3>
+                    <p>
+                        Ofrecemos herramientas y recursos para el desarrollo profesional continuo 
+                        en el sector agrícola, incluyendo capacitaciones y certificaciones.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon-container">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                    </div>
+                    <h3>Seguridad Garantizada</h3>
+                    <p>
+                        Verificación rigurosa de empleadores y trabajadores para garantizar 
+                        transacciones seguras y relaciones laborales confiables.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon-container">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                    </div>
+                    <h3>Acceso Móvil</h3>
+                    <p>
+                        Plataforma optimizada para dispositivos móviles, permitiendo acceso 
+                        desde cualquier lugar y en cualquier momento del día.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon-container">
+                        <div class="feature-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                    </div>
+                    <h3>Soporte 24/7</h3>
+                    <p>
+                        Atención al cliente especializada disponible las 24 horas para resolver 
+                        dudas y brindar asistencia personalizada a todos nuestros usuarios.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contacto">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <div class="footer-logo-icon">
+                        <img src="../assent/img/logo.jpg" alt="AgroMatch Logo">
+                    </div>
+                </div>
+                <p class="footer-description">
+                    La plataforma líder en empleos agrícolas que conecta talento especializado 
+                    con oportunidades de crecimiento en el sector más importante del país.
+                </p>
+                <div class="social-links">
+                    <a href="#" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" title="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" title="YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    <a href="#" title="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" title="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h3>NAVEGACIÓN</h3>
+                <ul>
+                    <li>
+                        <a href="#" onclick="location.reload()">
+                            <i class="fas fa-home"></i>
+                            Inicio
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#nosotros">
+                            <i class="fas fa-users"></i>
+                            Nosotros
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#servicios">
+                            <i class="fas fa-cogs"></i>
+                            Servicios
+                        </a>
+                    </li>
+                    <li>
+                        <a href="../vista/login-trabajador.html">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Iniciar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>RECURSOS</h3>
+                <ul>
+                    <li>
+                        <a href="../vista/seleccion-rol.html">
+                            <i class="fas fa-user-plus"></i>
+                            Registro
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-question-circle"></i>
+                            Ayuda
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-shield-alt"></i>
+                            Privacidad
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-file-contract"></i>
+                            Términos
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>CONTACTO</h3>
+                <div class="contact-info">
+                    <i class="fas fa-phone"></i>
+                    <span>+57 300 123 4567</span>
+                </div>
+                <div class="contact-info">
+                    <i class="fas fa-phone-alt"></i>
+                    <span>+57 601 234 5678</span>
+                </div>
+                <div class="contact-info">
+                    <i class="fas fa-envelope"></i>
+                    <span>contacto@agromatch.co</span>
+                </div>
+                <div class="contact-info">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Bogotá, Colombia</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 AgroMatch. Todos los derechos reservados. | Conectando el campo con oportunidades de futuro.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const navMenu = document.getElementById('navMenu');
+        const header = document.getElementById('header');
+
+        mobileMenuToggle.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+            const icon = mobileMenuToggle.querySelector('i');
+            icon.className = navMenu.classList.contains('active') 
+                ? 'fas fa-times' 
+                : 'fas fa-bars';
+        });
+
+        // Close mobile menu when clicking on links
+        navMenu.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A') {
+                navMenu.classList.remove('active');
+                const icon = mobileMenuToggle.querySelector('i');
+                icon.className = 'fas fa-bars';
+            }
+        });
+
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    const headerHeight = header.offsetHeight;
+                    const targetPosition = target.offsetTop - headerHeight;
+                    
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements for animation
+        document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Active navigation highlighting
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.nav-menu a');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 150;
+                const sectionHeight = section.offsetHeight;
+                if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}` || 
+                    (current === '' && link.getAttribute('href') === '#')) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Enhanced card interactions
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-15px) rotateX(5deg) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) rotateX(0deg) scale(1)';
+            });
+        });
+
+        // Loading states for buttons
+        document.querySelectorAll('.btn, .cta-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (this.href && !this.href.includes('#')) {
+                    this.classList.add('loading');
+                }
+            });
+        });
+
+        // Performance optimization - Lazy load background images
+        const lazyBackgrounds = document.querySelectorAll('[data-bg]');
+        const bgObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.style.backgroundImage = `url(${img.dataset.bg})`;
+                    bgObserver.unobserve(img);
+                }
+            });
+        });
+
+        lazyBackgrounds.forEach(bg => {
+            bgObserver.observe(bg);
+        });
+
+        // Add some interactive particle effects
+        const hero = document.querySelector('.hero');
+        let mouseX = 0, mouseY = 0;
+
+        hero.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const particles = document.querySelectorAll('.particle');
+            particles.forEach((particle, index) => {
+                const speed = (index + 1) * 0.01;
+                const x = (mouseX * speed);
+                const y = (mouseY * speed);
+                
+                particle.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Reset particles when mouse leaves
+        hero.addEventListener('mouseleave', () => {
+            const particles = document.querySelectorAll('.particle');
+            particles.forEach(particle => {
+                particle.style.transform = 'translate(0, 0)';
+            });
+        });
+    </script>
+</body>
+</html>

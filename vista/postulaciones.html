@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroMatch - Mis Postulaciones</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="../assent/css/postulaciones.css">
+</head>
+<body>
+    <!-- Header futurista -->
+    <header class="header-modern">
+        <div class="header-container">
+            <div class="logo-section">
+                <div class="logo-wrapper">
+                    <img src="../assent/img/logo.jpg" alt="AgroMatch Logo" class="logo-img">
+                    <div class="logo-text">
+                        <span class="logo-title">AgroMatch</span>
+                        <span class="logo-subtitle">Sistema de Postulaciones</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button class="btn-glass btn-secondary" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="btn-glass btn-primary" onclick="refreshPostulaciones()">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Actualizar</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Barra de estado -->
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot pulsing"></div>
+                <span>Sistema Activo</span>
+            </div>
+            <div class="status-info">
+                <i class="fas fa-clock"></i>
+                <span id="currentTime">Actualizando...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="hero-title">
+                    <i class="fas fa-paper-plane"></i>
+                    <h1>Mis Postulaciones</h1>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controles y filtros -->
+        <section class="controls-modern">
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input 
+                        type="text" 
+                        id="searchPostulaciones" 
+                        placeholder="Buscar por título, agricultor o ubicación..."
+                        class="search-input-modern"
+                    >
+                    <div class="search-line"></div>
+                </div>
+            </div>
+            
+            <div class="filter-tabs">
+                <button class="tab-btn active" onclick="filterByStatus('')">
+                    <i class="fas fa-list"></i> Todas
+                </button>
+                <button class="tab-btn" onclick="filterByStatus('Pendiente')">
+                    <i class="fas fa-hourglass-half"></i> Pendientes
+                </button>
+                <button class="tab-btn" onclick="filterByStatus('Aceptada')">
+                    <i class="fas fa-check-circle"></i> Aceptadas
+                </button>
+                <button class="tab-btn" onclick="filterByStatus('Rechazada')">
+                    <i class="fas fa-times-circle"></i> Rechazadas
+                </button>
+                <button class="tab-btn" onclick="filterByStatus('Finalizada')">
+                    <i class="fas fa-flag-checkered"></i> Finalizadas
+                </button>
+                <button class="tab-btn" onclick="filterByStatus('Favorito')">
+                    <i class="fas fa-heart"></i> Favoritos
+                </button>
+            </div>
+        </section>
+
+        <!-- Grid de postulaciones -->
+        <section class="postulaciones-grid" id="postulacionesList">
+            <!-- Las postulaciones se cargarán dinámicamente -->
+        </section>
+
+        <!-- Paginación moderna -->
+        <div class="pagination-modern">
+            <button class="pagination-btn-modern" onclick="previousPage()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="pagination-pages">
+                <span class="pagination-info">Página <strong id="currentPageNumber">1</strong> de <strong id="totalPagesNumber">1</strong></span>
+            </div>
+            <button class="pagination-btn-modern" onclick="nextPage()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </main>
+
+    <!-- Modal futurista -->
+    <div class="modal-overlay" id="detalleModal">
+        <div class="modal-container">
+            <div class="modal-header-modern">
+                <h2 id="modalTitle" class="modal-title-modern">
+                    <i class="fas fa-file-alt"></i>
+                    Detalles de la Postulación
+                </h2>
+                <button class="modal-close-modern" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body-modern" id="modalBody">
+                <!-- Contenido del modal se carga dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Sistema de notificaciones -->
+    <div class="toast-system" id="toastContainer"></div>
+
+
+
+    <script src="../js/postulaciones.js"></script>
+    <script>
+        // Actualizar reloj en tiempo real
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-ES', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const dateString = now.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            const clockElement = document.getElementById('currentTime');
+            if (clockElement) {
+                clockElement.textContent = `${dateString} | ${timeString}`;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>

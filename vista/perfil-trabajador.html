@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - AgroMatch</title>
+    <link rel="stylesheet" href="/assent/css/perfil-trabajador.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- jsPDF para exportar a PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        <div class="profile-loading">
+            <div class="loading"></div>
+            <p>Cargando perfil...</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <!-- Botones de acción superiores -->
+            <div class="header-actions-top">
+                <button class="btn btn-secondary" onclick="goBackToDashboard()">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </button>
+                
+                <button class="btn btn-accent" onclick="exportarPerfilPDF()" id="btnExportPDF">
+                    <i class="fas fa-file-pdf"></i> Exportar a PDF
+                </button>
+            </div>
+            
+            <!-- Input oculto para foto -->
+            <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;">
+            
+            <!-- Foto de perfil -->
+            <div class="profile-photo" id="profilePhoto" title="Haz clic para cambiar tu foto" onclick="changeProfilePhoto()">
+                <i class="fas fa-user"></i>
+            </div>
+            
+            <h1 class="profile-name" id="profileName">Cargando...</h1>
+            <p class="profile-role" id="profileRole">Cargando...</p>
+            
+            <!-- Botón de reportar (solo para perfiles de otros usuarios) -->
+            <div id="reportButtonContainer"></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('info')">
+                <i class="fas fa-info-circle"></i> Información
+            </button>
+            <button class="tab" onclick="showTab('edit')" id="editTab">
+                <i class="fas fa-edit"></i> Editar Perfil
+            </button>
+            <button class="tab" onclick="showTab('skills')">
+                <i class="fas fa-tools"></i> Habilidades
+            </button>
+            <button class="tab" onclick="showTab('ratings')">
+                <i class="fas fa-star"></i> Calificaciones
+            </button>
+            <button class="tab" onclick="showTab('documents')" id="documentsTab">
+                <i class="fas fa-file-alt"></i> Documentos
+            </button>
+        </div>
+
+        <!-- TAB: INFORMACIÓN PERSONAL -->
+        <div id="info" class="tab-content active">
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3><i class="fas fa-user"></i> Información Personal</h3>
+                    <div class="info-item">
+                        <span class="info-label">Nombre completo:</span>
+                        <span class="info-value" id="displayName">Cargando...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Correo electrónico:</span>
+                        <span class="info-value" id="displayEmail">Cargando...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Teléfono:</span>
+                        <span class="info-value" id="displayPhone">Cargando...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Red Social:</span>
+                        <span class="info-value" id="displaySocial">No especificado</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-briefcase"></i> Información Profesional</h3>
+                    <div class="info-item">
+                        <span class="info-label">Rol:</span>
+                        <span class="info-value" id="displayRole">Cargando...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Área de trabajo:</span>
+                        <span class="info-value" id="displayArea">No especificado</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Especialización:</span>
+                        <span class="info-value" id="displaySpecialty">No especificado</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Años de experiencia:</span>
+                        <span class="info-value" id="displayExperience">No especificado</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Nivel educativo:</span>
+                        <span class="info-value" id="displayEducation">No especificado</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-chart-line"></i> Estadísticas</h3>
+                    <div class="info-item">
+                        <span class="info-label">Trabajos completados:</span>
+                        <span class="info-value" id="displayJobsCompleted">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Calificación promedio:</span>
+                        <span class="info-value" id="displayRating">
+                            <span style="color: #ffc107;">⭐⭐⭐⭐⭐</span> 0.0
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Estado:</span>
+                        <span class="info-value" id="displayStatus" style="color: #28a745;">Activo</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Miembro desde:</span>
+                        <span class="info-value" id="displayMemberSince">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: EDITAR PERFIL -->
+        <div id="edit" class="tab-content">
+            <h2 style="margin-bottom: 25px; color: #495057;">
+                <i class="fas fa-edit"></i> Editar Información del Perfil
+            </h2>
+            
+            <!-- Foto de perfil -->
+            <div class="info-card" style="margin-bottom: 25px;">
+                <h3><i class="fas fa-camera"></i> Foto de Perfil</h3>
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div id="editProfilePhotoPreview" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #4a7c59; display: flex; align-items: center; justify-content: center; font-size: 24px; background: #f8f9fa;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <button type="button" class="btn" onclick="changeProfilePhoto()">
+                            <i class="fas fa-upload"></i> Cambiar Foto
+                        </button>
+                        <p style="color: #6c757d; font-size: 12px; margin: 5px 0 0 0;">
+                            Formatos: PNG, JPG, JPEG | Tamaño máximo: 5MB
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="profileForm">
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3><i class="fas fa-user-circle"></i> Datos Personales</h3>
+                        <div class="form-group">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="editFirstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Apellido *</label>
+                            <input type="text" class="form-control" id="editLastName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="editPhone" placeholder="+57 300 123 4567">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Red Social / Contacto</label>
+                            <input type="text" class="form-control" id="editSocialMedia" placeholder="@usuario o enlace">
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3><i class="fas fa-seedling"></i> Información Profesional</h3>
+                        <div class="form-group">
+                            <label class="form-label">Área de trabajo</label>
+                            <select class="form-control" id="editArea">
+                                <option value="">Selecciona un área</option>
+                                <option value="Agricultura">Agricultura</option>
+                                <option value="Ganadería">Ganadería</option>
+                                <option value="Silvicultura">Silvicultura</option>
+                                <option value="Pesca">Pesca</option>
+                                <option value="Agroindustria">Agroindustria</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Especialización</label>
+                            <input type="text" class="form-control" id="editSpecialty" placeholder="Ej: Cosecha de café">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Años de experiencia</label>
+                            <input type="number" class="form-control" id="editExperience" min="0" max="50" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nivel educativo</label>
+                            <select class="form-control" id="editEducation">
+                                <option value="">Selecciona tu nivel</option>
+                                <option value="Primaria">Primaria</option>
+                                <option value="Secundaria">Secundaria</option>
+                                <option value="Técnico">Técnico</option>
+                                <option value="Tecnólogo">Tecnólogo</option>
+                                <option value="Profesional">Profesional</option>
+                                <option value="Postgrado">Postgrado</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; text-align: center;">
+                    <button type="submit" class="btn">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- TAB: HABILIDADES -->
+        <div id="skills" class="tab-content">
+            <h2 style="margin-bottom: 25px; color: #495057;">
+                <i class="fas fa-tools"></i> Mis Habilidades
+            </h2>
+            
+            <div class="info-card" style="margin-bottom: 25px;" id="addSkillSection">
+                <h3><i class="fas fa-plus-circle"></i> Agregar Nueva Habilidad</h3>
+                <form id="addSkillForm">
+                    <div class="info-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nombre de la habilidad *</label>
+                            <input type="text" class="form-control" id="skillName" placeholder="Ej: Cosecha de Café" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Clasificación *</label>
+                            <select class="form-control" id="skillClassification" required>
+                                <option value="">Selecciona una clasificación</option>
+                                <option value="Técnica agrícola">Técnica agrícola</option>
+                                <option value="Manejo de maquinaria">Manejo de maquinaria</option>
+                                <option value="Especializada">Especializada</option>
+                                <option value="Logística">Logística</option>
+                                <option value="Control de plagas">Control de plagas</option>
+                                <option value="Riego y drenaje">Riego y drenaje</option>
+                                <option value="Cosecha y poscosecha">Cosecha y poscosecha</option>
+                                <option value="Fertilización">Fertilización</option>
+                                <option value="Preparación de suelo">Preparación de suelo</option>
+                                <option value="Transporte y distribución">Transporte y distribución</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nivel</label>
+                            <select class="form-control" id="skillLevel">
+                                <option value="Básico">Básico</option>
+                                <option value="Intermedio" selected>Intermedio</option>
+                                <option value="Avanzado">Avanzado</option>
+                                <option value="Experto">Experto</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Años de experiencia</label>
+                            <input type="number" class="form-control" id="skillYears" min="0" max="50" value="0">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" style="margin-top: 15px;">
+                        <i class="fas fa-plus"></i> Agregar Habilidad
+                    </button>
+                </form>
+            </div>
+
+            <div class="info-card">
+                <h3><i class="fas fa-list"></i> Habilidades Registradas</h3>
+                <div id="skillsList">
+                    <div class="empty-state">
+                        <i class="fas fa-tools" style="font-size: 48px; color: #ddd;"></i>
+                        <p>No tienes habilidades registradas aún</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: CALIFICACIONES -->
+        <div id="ratings" class="tab-content">
+            <h2 style="margin-bottom: 25px; color: #495057;">
+                <i class="fas fa-star"></i> Calificaciones Recibidas
+            </h2>
+            
+            <div id="receivedRatingsList">
+                <div class="empty-state">
+                    <i class="fas fa-star" style="font-size: 48px; color: #ddd;"></i>
+                    <p>No tienes calificaciones aún</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: DOCUMENTOS -->
+        <div id="documents" class="tab-content">
+            <h2 style="margin-bottom: 25px; color: #495057;">
+                <i class="fas fa-file-alt"></i> Gestión de Documentos
+            </h2>
+            
+            <div class="info-card" style="margin-bottom: 25px;">
+                <h3><i class="fas fa-info-circle"></i> Estado de Documentos</h3>
+                <div class="info-item">
+                    <span class="info-label">Documentos subidos:</span>
+                    <span class="info-value" id="documentCount">0/3 completos</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Estado del perfil:</span>
+                    <span class="info-value" id="profileStatus" style="color: #dc3545;">
+                        <i class="fas fa-clock"></i> Pendiente de verificación
+                    </span>
+                </div>
+            </div>
+
+            <div class="documents-grid">
+                <div class="document-card">
+                    <div class="document-icon"><i class="fas fa-file-alt"></i></div>
+                    <h4>Currículum Vitae</h4>
+                    <p id="cvFileName">No subido</p>
+                    <button class="btn" onclick="uploadDocument('CV')">
+                        <i class="fas fa-upload"></i> Subir CV
+                    </button>
+                </div>
+
+                <div class="document-card">
+                    <div class="document-icon"><i class="fas fa-certificate"></i></div>
+                    <h4>Certificaciones</h4>
+                    <p id="certFileName">No subido</p>
+                    <button class="btn" onclick="uploadDocument('Certificaciones')">
+                        <i class="fas fa-upload"></i> Subir Certificación
+                    </button>
+                </div>
+
+                <div class="document-card">
+                    <div class="document-icon"><i class="fas fa-folder"></i></div>
+                    <h4>Documento Adicional</h4>
+                    <p id="additionalFileName">Opcional</p>
+                    <button class="btn" onclick="uploadDocument('Adicional')">
+                        <i class="fas fa-upload"></i> Subir Documento
+                    </button>
+                </div>
+            </div>
+
+            <div id="uploadedFiles" style="margin-top: 30px;">
+                <h3 style="color: #495057; margin-bottom: 15px;">
+                    <i class="fas fa-folder-open"></i> Archivos Subidos
+                </h3>
+                <div id="filesList" style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <p style="color: #6c757d; text-align: center;">No hay archivos subidos aún</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container para mensajes -->
+    <div id="messageContainer"></div>
+
+    <!-- Scripts -->
+    <script src="/js/perfil-trabajador.js"></script>
+</body>
+</html>

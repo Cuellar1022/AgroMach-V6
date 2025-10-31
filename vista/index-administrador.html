@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Panel de Administrador - AgroMach</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assent/css/index-administrador.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar">
+            <div class="logo">
+                <h1><i class="fas fa-seedling"></i> AgroMach</h1>
+                <p>Panel de Administrador</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="dashboard">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="usuarios">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Gestión de Usuarios</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="publicaciones">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Gestión de Publicaciones</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="estadisticas">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Estadísticas</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="reportes">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reportes</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="historial">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-history"></i>
+                        <span>Historial de Auditoría</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="admin-info">
+                <div class="admin-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <p class="admin-name">Admin Principal</p>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="content-section active">
+                <header class="content-header">
+                    <h1>Dashboard Principal</h1>
+                    <div class="header-actions">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Buscar..." id="searchInput">
+                        </div>
+                        <div class="notification-bell" onclick="toggleNotifications()">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-count">3</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Quick Stats Cards -->
+                <div class="stats-overview">
+                    <div class="stats-card">
+                        <div class="stats-icon users">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="totalUsers">1,247</h3>
+                            <p>Usuarios Activos</p>
+                            <span class="stats-change positive">+12%</span>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon jobs">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="activeJobs">324</h3>
+                            <p>Ofertas Activas</p>
+                            <span class="stats-change positive">+8%</span>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon applications">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="totalApplications">2,156</h3>
+                            <p>Postulaciones</p>
+                            <span class="stats-change positive">+15%</span>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon success">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="successfulHires">892</h3>
+                            <p>Contrataciones</p>
+                            <span class="stats-change positive">+23%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Grid -->
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-clock"></i> Actividad Reciente</h3>
+                        <div class="activity-list" id="activityList">
+                            <!-- Activities will be loaded by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-tasks"></i> Acciones Rápidas</h3>
+                        <div class="quick-actions">
+                            <button class="action-btn primary" onclick="showSection('usuarios')">
+                                <i class="fas fa-user-plus"></i>
+                                Gestionar Usuarios
+                            </button>
+                            <button class="action-btn secondary" onclick="showSection('publicaciones')">
+                                <i class="fas fa-eye"></i>
+                                Revisar Publicaciones
+                            </button>
+                            <button class="action-btn success" onclick="showSection('reportes')">
+                                <i class="fas fa-download"></i>
+                                Generar Reporte
+                            </button>
+                            <button class="action-btn warning" onclick="showPendingReports()">
+                                <i class="fas fa-flag"></i>
+                                Ver Reportes Pendientes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="system-status">
+                    <div class="status-card">
+                        <h3><i class="fas fa-server"></i> Estado del Sistema</h3>
+                        <div class="status-grid" id="systemStatus">
+                            <!-- System status will be loaded by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Usuarios Section -->
+            <section id="usuarios-section" class="content-section">
+                <header class="content-header">
+                    <h1>Gestión de Usuarios</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showAddUserModal()">
+                            <i class="fas fa-plus"></i> Agregar Usuario
+                        </button>
+                    </div>
+                </header>
+
+                <!-- User Filters -->
+                <div class="filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label>Tipo de Usuario</label>
+                            <select id="userTypeFilter">
+                                <option value="">Todos</option>
+                                <option value="agricultor">Agricultores</option>
+                                <option value="trabajador">Trabajadores</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Estado</label>
+                            <select id="userStatusFilter">
+                                <option value="">Todos</option>
+                                <option value="activo">Activo</option>
+                                <option value="suspendido">Suspendido</option>
+                                <option value="bloqueado">Bloqueado</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Región</label>
+                            <select id="regionFilter">
+                                <option value="">Todas</option>
+                                <option value="bogota">Bogotá</option>
+                                <option value="antioquia">Antioquia</option>
+                                <option value="valle">Valle del Cauca</option>
+                            </select>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="filter-btn apply" onclick="applyUserFilters()">Aplicar</button>
+                            <button class="filter-btn clear" onclick="clearUserFilters()">Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>Lista de Usuarios</h3>
+                        <div class="bulk-actions">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            <label for="selectAll">Seleccionar todo</label>
+                            <button class="bulk-btn suspend" onclick="bulkSuspendUsers()">Suspender</button>
+                            <button class="bulk-btn delete" onclick="bulkDeleteUsers()">Eliminar</button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be loaded by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN DE PUBLICACIONES -->
+            <section id="publicaciones-section" class="content-section">
+                <header class="content-header">
+                    <h1><i class="fas fa-briefcase"></i> Gestión de Publicaciones</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="applyPublicacionesFilters()">
+                            <i class="fas fa-filter"></i> Aplicar Filtros
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearPublicacionesFilters()">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Filtros -->
+                <div class="filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label>Estado</label>
+                            <select id="pubEstadoFilter" class="form-control">
+                                <option value="">Todos</option>
+                                <option value="Abierta">Abierta</option>
+                                <option value="Cerrada">Cerrada</option>
+                                <option value="En Proceso">En Proceso</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Agricultor</label>
+                            <input type="text" id="pubAgricultorFilter" class="form-control" placeholder="Buscar por nombre o email...">
+                        </div>
+                        <div class="filter-group">
+                            <label>Fecha Desde</label>
+                            <input type="date" id="pubFechaDesde" class="form-control">
+                        </div>
+                        <div class="filter-group">
+                            <label>Fecha Hasta</label>
+                            <input type="date" id="pubFechaHasta" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas Rápidas -->
+                <div class="stats-overview">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="pubAbiertas">0</h3>
+                            <p>Ofertas Abiertas</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #6c757d, #495057);">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="pubCerradas">0</h3>
+                            <p>Ofertas Cerradas</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #ffc107, #ff9800);">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="pubEnProceso">0</h3>
+                            <p>En Proceso</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="pubTotalPostulaciones">0</h3>
+                            <p>Total Postulaciones</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Publicaciones -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>Todas las Publicaciones</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Título</th>
+                                    <th>Agricultor</th>
+                                    <th>Pago</th>
+                                    <th>Estado</th>
+                                    <th>Postulaciones</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="publicacionesTableBody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; padding: 2rem;">
+                                        <div class="spinner-border" role="status">
+                                            <span class="sr-only">Cargando...</span>
+                                        </div>
+                                        <p style="margin-top: 1rem;">Cargando publicaciones...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN DE ESTADÍSTICAS -->
+            <section id="estadisticas-section" class="content-section">
+                <header class="content-header">
+                    <h1><i class="fas fa-chart-bar"></i> Estadísticas del Sistema</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="loadEstadisticas()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Estadísticas Generales -->
+                <div id="estadisticasGenerales">
+                    <div style="text-align: center; padding: 3rem;">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Cargando...</span>
+                        </div>
+                        <p style="margin-top: 1rem;">Cargando estadísticas...</p>
+                    </div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="dashboard-grid" style="margin-top: 2rem;">
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-chart-line"></i> Usuarios Registrados</h3>
+                        <canvas id="chartUsuariosMes" height="300"></canvas>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-chart-bar"></i> Ofertas Publicadas</h3>
+                        <canvas id="chartOfertasMes" height="300"></canvas>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-chart-pie"></i> Estado de Postulaciones</h3>
+                        <canvas id="chartPostulacionesEstado" height="300"></canvas>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-chart-pie"></i> Distribución de Pagos</h3>
+                        <canvas id="chartDistribucionPagos" height="300"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Lists -->
+                <div class="dashboard-grid" style="margin-top: 2rem;">
+                    <div class="dashboard-card" id="topTrabajadores">
+                        <h4><i class="fas fa-trophy"></i> Top Trabajadores</h4>
+                        <p>Cargando...</p>
+                    </div>
+
+                    <div class="dashboard-card" id="topAgricultores">
+                        <h4><i class="fas fa-trophy"></i> Top Agricultores</h4>
+                        <p>Cargando...</p>
+                    </div>
+                </div>
+
+                <!-- Métricas en Tiempo Real -->
+                <div class="system-status" style="margin-top: 2rem;">
+                    <div class="status-card">
+                        <h3><i class="fas fa-clock"></i> Métricas en Tiempo Real</h3>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="status-indicator online"></div>
+                                    <span>Usuarios Activos</span>
+                                </div>
+                                <strong id="metricaUsuariosActivos">--</strong>
+                            </div>
+                            <div class="status-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="status-indicator online"></div>
+                                    <span>Ofertas Abiertas</span>
+                                </div>
+                                <strong id="metricaOfertasAbiertas">--</strong>
+                            </div>
+                            <div class="status-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="status-indicator warning"></div>
+                                    <span>Postulaciones Pendientes</span>
+                                </div>
+                                <strong id="metricaPostulacionesPendientes">--</strong>
+                            </div>
+                            <div class="status-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="status-indicator online"></div>
+                                    <span>Contratos Activos</span>
+                                </div>
+                                <strong id="metricaContratosActivos">--</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN DE REPORTES -->
+            <section id="reportes-section" class="content-section">
+                <header class="content-header">
+                    <h1><i class="fas fa-file-alt"></i> Reportes y Exportaciones</h1>
+                </header>
+
+                <div id="reportesContainer">
+                    <div style="text-align: center; padding: 3rem;">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Cargando...</span>
+                        </div>
+                        <p style="margin-top: 1rem;">Cargando opciones de reportes...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN DE HISTORIAL -->
+            <section id="historial-section" class="content-section">
+                <header class="content-header">
+                    <h1>Historial de Auditoría</h1>
+                </header>
+                <div class="coming-soon">
+                    <i class="fas fa-history"></i>
+                    <h3>Sección en desarrollo</h3>
+                    <p>El historial de auditoría estará disponible próximamente.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Detalles del Usuario</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Modal content will be loaded by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="../js/index-administrador.js"></script>
+</body>
+</html>

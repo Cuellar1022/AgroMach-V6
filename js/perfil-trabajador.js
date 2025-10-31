@@ -1,0 +1,1436 @@
+// ================================================================
+// PERFIL TRABAJADOR - JAVASCRIPT COMPLETO Y FUSIONADO
+// ================================================================
+
+// Variables globales
+let currentViewingUserId = null;
+let isOwnProfile = true;
+let selectedRating = 0;
+
+// ================================================================
+// INICIALIZACIÓN
+// ================================================================
+
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 Iniciando sistema de perfil...');
+    
+    // Detectar si estamos viendo el perfil de otro usuario
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('userId');
+    const isSelf = urlParams.get('self') === 'true';
+    
+    if (userId && !isSelf) {
+        currentViewingUserId = parseInt(userId);
+        isOwnProfile = false;
+        console.log('👁️ Viendo perfil de usuario:', userId);
+        hideEditOptions();
+    } else {
+        isOwnProfile = true;
+        console.log('👤 Viendo perfil propio');
+    }
+    
+    // Cargar datos
+    await loadUserData();
+    setupFormHandlers();
+    setupPhotoUpload();
+    setupRatingSystem();
+    setupTabListeners();
+    loadSkills();
+    loadWorkHistory();
+    loadApplicationHistory();
+    loadPendingRatings();
+    loadReceivedRatings();
+    loadDocuments();
+    
+    // Ocultar loading
+    setTimeout(() => {
+        const loading = document.getElementById('loadingScreen');
+        if (loading) loading.style.display = 'none';
+    }, 1000);
+    
+    console.log('✅ Sistema de perfil completamente cargado');
+});
+
+// ================================================================
+// CARGAR DATOS DEL USUARIO - VERSIÓN CORREGIDA
+// ================================================================
+
+async function loadUserData() {
+    try {
+        console.log('📥 Cargando datos del usuario...');
+        
+        let url = '/get_user_session';
+        if (!isOwnProfile && currentViewingUserId) {
+            url = `/api/get_user_profile/${currentViewingUserId}`;
+        }
+        
+        const response = await fetch(url, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+            const user = data.user;
+            console.log('✅ Datos cargados:', user);
+            console.log('📊 Datos profesionales desde JSON:');
+            console.log('   area_trabajo:', user.area_trabajo);
+            console.log('   especializacion:', user.especializacion);
+            console.log('   anos_experiencia:', user.anos_experiencia);
+            console.log('   nivel_educativo:', user.nivel_educativo);
+            
+            // Información personal
+            const fullName = `${user.first_name || user.nombre || ''} ${user.last_name || user.apellido || ''}`.trim();
+            updateElement('profileName', fullName);
+            updateElement('profileRole', user.rol || 'Trabajador Agrícola');
+            
+            updateElement('displayName', fullName);
+            updateElement('displayEmail', user.email || 'No especificado');
+            updateElement('displayPhone', user.telefono || 'No especificado');
+            updateElement('displaySocial', user.red_social || 'No especificado');
+            
+            // ===== INFORMACIÓN PROFESIONAL (desde JSON) =====
+            updateElement('displayRole', user.rol || 'Trabajador');
+            updateElement('displayArea', user.area_trabajo || 'No especificado');
+            updateElement('displaySpecialty', user.especializacion || 'No especificado');
+            updateElement('displayExperience', user.anos_experiencia ? `${user.anos_experiencia} años` : 'No especificado');
+            updateElement('displayEducation', user.nivel_educativo || 'No especificado');
+            
+            // Estadísticas
+            updateElement('displayJobsCompleted', user.trabajos_completados || 0);
+            updateElement('displayRating', generateStarsDisplay(user.calificacion_promedio || 0), true);
+            updateElement('displayStatus', user.estado || 'Activo');
+            updateElement('displayMemberSince', formatDate(user.fecha_registro));
+            
+            // ===== FORMULARIO DE EDICIÓN =====
+            if (isOwnProfile) {
+                const names = fullName.split(' ');
+                
+                // Datos personales
+                setInputValue('editFirstName', names[0] || '');
+                setInputValue('editLastName', names.slice(1).join(' ') || '');
+                setInputValue('editPhone', user.telefono || '');
+                setInputValue('editSocialMedia', user.red_social || '');
+                
+                // Datos profesionales
+                setSelectValue('editArea', user.area_trabajo || '');
+                setInputValue('editSpecialty', user.especializacion || '');
+                setInputValue('editExperience', user.anos_experiencia || '');
+                setSelectValue('editEducation', user.nivel_educativo || '');
+                
+                console.log('✅ Formulario llenado correctamente');
+            }
+            
+            // Foto
+            if (user.url_foto) {
+                updatePhotoDisplay(user.url_foto);
+            }
+            
+        } else {
+            showMessage('Error cargando datos del usuario', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+        showMessage('Error de conexión', 'error');
+    }
+}
+
+// ================================================================
+// OCULTAR OPCIONES DE EDICIÓN
+// ================================================================
+
+function hideEditOptions() {
+    const editTab = document.getElementById('editTab');
+    const documentsTab = document.getElementById('documentsTab');
+    const addSkillSection = document.getElementById('addSkillSection');
+    
+    if (editTab) editTab.style.display = 'none';
+    if (documentsTab) documentsTab.style.display = 'none';
+    if (addSkillSection) addSkillSection.style.display = 'none';
+    
+    const reportContainer = document.getElementById('reportButtonContainer');
+    if (reportContainer) {
+        reportContainer.innerHTML = `
+            <button class="btn btn-danger" onclick="reportUser()" style="margin-top: 15px;">
+                <i class="fas fa-flag"></i> Reportar Usuario
+            </button>
+        `;
+    }
+}
+
+// ================================================================
+// HABILIDADES
+// ================================================================
+
+async function loadSkills() {
+    try {
+        const url = '/api/get_worker_skills';
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.skills && data.skills.length > 0) {
+            displaySkills(data.skills);
+        } else {
+            const container = document.getElementById('skillsList');
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-tools" style="font-size: 48px; color: #ddd;"></i>
+                        <p>No hay habilidades registradas</p>
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando habilidades:', error);
+    }
+}
+
+function displaySkills(skills) {
+    const container = document.getElementById('skillsList');
+    if (!container) return;
+    
+    let html = '<div class="skills-grid">';
+    
+    skills.forEach(skill => {
+        const levelColors = {
+            'Básico': '#6c757d',
+            'Intermedio': '#007bff',
+            'Avanzado': '#28a745',
+            'Experto': '#ffc107'
+        };
+        
+        html += `
+            <div class="skill-card">
+                <div class="skill-header">
+                    <h4>${skill.nombre}</h4>
+                    ${isOwnProfile ? `
+                        <button class="btn-icon-delete" onclick="deleteSkill(${skill.id})" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+                <div class="skill-info">
+                    <span class="skill-badge" style="background: ${levelColors[skill.nivel]}20; color: ${levelColors[skill.nivel]};">
+                        ${skill.nivel || 'Intermedio'}
+                    </span>
+                    <span class="skill-category">${skill.clasificacion}</span>
+                </div>
+                <div class="skill-experience">
+                    <i class="fas fa-clock"></i> ${skill.anos_experiencia || 0} ${skill.anos_experiencia === 1 ? 'año' : 'años'}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// ================================================================
+// HISTORIAL
+// ================================================================
+
+async function loadWorkHistory() {
+    try {
+        const response = await fetch('/api/get_work_history', {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.history && data.history.length > 0) {
+            displayWorkHistory(data.history);
+        }
+    } catch (error) {
+        console.error('Error cargando historial:', error);
+    }
+}
+
+function displayWorkHistory(history) {
+    const container = document.getElementById('workHistoryList');
+    if (!container) return;
+    
+    let html = '';
+    history.forEach(work => {
+        const statusColors = {
+            'Activo': '#007bff',
+            'Finalizado': '#28a745',
+            'Cancelado': '#dc3545'
+        };
+        
+        html += `
+            <div class="history-card">
+                <div class="history-header">
+                    <div>
+                        <h4>${work.titulo}</h4>
+                        <p class="history-employer">
+                            <i class="fas fa-user"></i> ${work.otra_persona}
+                        </p>
+                    </div>
+                    <span class="status-badge" style="background: ${statusColors[work.estado]}20; color: ${statusColors[work.estado]};">
+                        ${work.estado}
+                    </span>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+async function loadApplicationHistory() {
+    if (!isOwnProfile) return;
+    
+    try {
+        const response = await fetch('/api/get_application_history', {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.applications && data.applications.length > 0) {
+            displayApplicationHistory(data.applications);
+        }
+    } catch (error) {
+        console.error('Error cargando postulaciones:', error);
+    }
+}
+
+function displayApplicationHistory(applications) {
+    const container = document.getElementById('applicationHistoryList');
+    if (!container) return;
+    
+    let html = '';
+    applications.forEach(app => {
+        html += `
+            <div class="history-card">
+                <div class="history-header">
+                    <div>
+                        <h4>${app.titulo}</h4>
+                        <p class="history-employer">
+                            <i class="fas fa-user"></i> ${app.agricultor}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// ================================================================
+// CALIFICACIONES PENDIENTES
+// ================================================================
+
+async function loadPendingRatings() {
+    if (!isOwnProfile) return;
+    
+    try {
+        const response = await fetch('/api/get_pending_ratings', {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.pending_ratings) {
+            const select = document.getElementById('employerSelect');
+            if (!select) return;
+            
+            if (data.pending_ratings.length === 0) {
+                select.innerHTML = '<option value="">No hay empleadores para calificar</option>';
+                return;
+            }
+            
+            select.innerHTML = '<option value="">Selecciona un empleador</option>';
+            data.pending_ratings.forEach(p => {
+                const option = document.createElement('option');
+                option.value = JSON.stringify({
+                    acuerdo_id: p.id_acuerdo,
+                    receptor_id: p.id_usuario
+                });
+                option.textContent = `${p.nombre} - ${p.titulo}`;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando pendientes:', error);
+    }
+}
+
+// ================================================================
+// CALIFICACIONES RECIBIDAS - VERSIÓN MEJORADA
+// ================================================================
+
+async function loadReceivedRatings() {
+    try {
+        console.log('🔄 Cargando calificaciones recibidas...');
+        
+        const userId = new URLSearchParams(window.location.search).get('userId');
+        let url = userId 
+            ? `/api/get_ratings_received?user_id=${userId}`
+            : '/api/get_ratings_received';
+        
+        const response = await fetch(url, {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        console.log('📊 Datos de calificaciones:', data);
+        
+        if (data.success && data.calificaciones && data.calificaciones.length > 0) {
+            renderReceivedRatings(data.calificaciones, data.estadisticas);
+        } else {
+            showNoRatings();
+        }
+    } catch (error) {
+        console.error('❌ Error cargando calificaciones:', error);
+        showNoRatings();
+    }
+}
+
+function renderReceivedRatings(calificaciones, stats) {
+    const container = document.getElementById('receivedRatingsList');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <!-- Resumen de Calificaciones -->
+        <div class="info-card" style="margin-bottom: 25px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); text-align: center; padding: 40px;">
+            <div style="font-size: 72px; font-weight: 800; color: #1e3a2e; line-height: 1; margin-bottom: 20px;">
+                ${stats.promedio.toFixed(1)}
+            </div>
+            <div style="font-size: 48px; color: #ffc107; margin-bottom: 20px;">
+                ${generateStars(Math.round(stats.promedio))}
+            </div>
+            <div style="color: #666; font-weight: 600; font-size: 20px;">
+                ${stats.total} ${stats.total === 1 ? 'calificación' : 'calificaciones'}
+            </div>
+        </div>
+        
+        <!-- Distribución de Calificaciones -->
+        <div class="info-card" style="margin-bottom: 25px;">
+            <h3 style="margin-bottom: 20px; color: #495057;">
+                <i class="fas fa-chart-bar"></i> Distribución de Calificaciones
+            </h3>
+            ${generateRatingDistribution(stats.distribucion, stats.total)}
+        </div>
+        
+        <!-- Lista de Calificaciones -->
+        <div class="info-card">
+            <h3 style="margin-bottom: 20px; color: #495057;">
+                <i class="fas fa-comments"></i> Comentarios de Empleadores
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                ${calificaciones.map(cal => `
+                    <div style="padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 4px solid #4a7c59; transition: all 0.3s;" onmouseover="this.style.transform='translateX(5px)'" onmouseout="this.style.transform='translateX(0)'">
+                        <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 12px;">
+                            ${cal.emisor.foto 
+                                ? `<img src="/static/uploads/profile_photos/${cal.emisor.foto}" 
+                                     style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #90EE90;">` 
+                                : `<div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #4a7c59, #1e3a2e); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 3px solid #90EE90;">
+                                     ${getInitials(cal.emisor.nombre)}
+                                   </div>`
+                            }
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                                    <div>
+                                        <div style="font-weight: 700; color: #1e3a2e; font-size: 18px;">
+                                            ${cal.emisor.nombre}
+                                        </div>
+                                        <div style="color: #6c757d; font-size: 14px; margin-top: 4px;">
+                                            <span style="padding: 3px 10px; background: rgba(144, 238, 144, 0.2); border-radius: 4px; font-weight: 600;">
+                                                ${cal.emisor.rol}
+                                            </span>
+                                            ${cal.trabajo.titulo ? ` • ${cal.trabajo.titulo}` : ''}
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 28px; color: #ffc107; margin-bottom: 5px;">
+                                            ${generateStars(cal.puntuacion)}
+                                        </div>
+                                        <div style="color: #6c757d; font-size: 13px;">
+                                            ${formatearFecha(cal.fecha)}
+                                        </div>
+                                    </div>
+                                </div>
+                                ${cal.comentario ? `
+                                    <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 10px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                        <i class="fas fa-quote-left" style="color: #90EE90; margin-right: 8px; font-size: 16px;"></i>
+                                        <span style="color: #495057; line-height: 1.6; font-style: italic; font-size: 15px;">
+                                            ${cal.comentario}
+                                        </span>
+                                        <i class="fas fa-quote-right" style="color: #90EE90; margin-left: 8px; font-size: 16px;"></i>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function generateRatingDistribution(distribucion, total) {
+    let html = '';
+    
+    for (let i = 5; i >= 1; i--) {
+        const count = distribucion[i.toString()] || 0;
+        const percentage = total > 0 ? (count / total) * 100 : 0;
+        
+        html += `
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <div style="width: 80px; text-align: right; font-weight: 700; color: #495057; font-size: 14px;">
+                    ${i} <i class="fas fa-star" style="color: #ffc107; font-size: 13px;"></i>
+                </div>
+                <div style="flex: 1; background: #e9ecef; height: 28px; border-radius: 14px; overflow: hidden; position: relative;">
+                    <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #4a7c59, #90EE90); transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;">
+                        ${percentage > 15 ? `<span style="color: white; font-size: 12px; font-weight: 700;">${count}</span>` : ''}
+                    </div>
+                    ${percentage <= 15 && count > 0 ? `<span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 700; color: #495057;">${count}</span>` : ''}
+                </div>
+                <div style="width: 60px; text-align: left; font-weight: 700; color: #6c757d; font-size: 13px;">
+                    ${percentage.toFixed(0)}%
+                </div>
+            </div>
+        `;
+    }
+    
+    return html;
+}
+
+function showNoRatings() {
+    const container = document.getElementById('receivedRatingsList');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="empty-state" style="text-align: center; padding: 80px 20px;">
+            <div style="width: 120px; height: 120px; margin: 0 auto 30px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-star" style="font-size: 64px; color: #ddd;"></i>
+            </div>
+            <h3 style="color: #6c757d; margin-bottom: 15px; font-size: 24px;">No tienes calificaciones aún</h3>
+            <p style="color: #adb5bd; font-size: 16px; max-width: 400px; margin: 0 auto;">Completa trabajos para recibir calificaciones de empleadores</p>
+        </div>
+    `;
+}
+
+// ================================================================
+// DOCUMENTOS
+// ================================================================
+
+async function loadDocuments() {
+    if (!isOwnProfile) return;
+    
+    try {
+        const response = await fetch('/api/user-documents', {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.documents) {
+            displayDocuments(data.documents);
+            updateDocumentCount(data.documents.length);
+        }
+    } catch (error) {
+        console.error('Error cargando documentos:', error);
+    }
+}
+
+function displayDocuments(documents) {
+    const container = document.getElementById('filesList');
+    if (!container) return;
+    
+    if (documents.length === 0) {
+        container.innerHTML = '<p style="color: #6c757d; text-align: center;">No hay archivos subidos aún</p>';
+        return;
+    }
+    
+    let html = '';
+    documents.forEach(doc => {
+        html += `
+            <div class="document-item">
+                <div class="document-info">
+                    <div class="document-type"><i class="fas fa-file"></i> ${doc.tipo_documento}</div>
+                    <div class="document-name">${doc.nombre_archivo}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function updateDocumentCount(count) {
+    const countEl = document.getElementById('documentCount');
+    const statusEl = document.getElementById('profileStatus');
+    
+    if (countEl) countEl.textContent = `${count}/3 documentos`;
+    
+    if (statusEl) {
+        if (count >= 2) {
+            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Perfil completo';
+            statusEl.style.color = '#28a745';
+        } else {
+            statusEl.innerHTML = '<i class="fas fa-clock"></i> Pendiente de verificación';
+            statusEl.style.color = '#dc3545';
+        }
+    }
+}
+
+// ================================================================
+// FORMULARIOS
+// ================================================================
+
+function setupFormHandlers() {
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', handleProfileSubmit);
+        console.log('✅ Formulario de perfil configurado');
+    }
+    
+    const skillForm = document.getElementById('addSkillForm');
+    if (skillForm) {
+        skillForm.addEventListener('submit', handleSkillSubmit);
+        console.log('✅ Formulario de habilidades configurado');
+    }
+}
+
+async function handleProfileSubmit(e) {
+    e.preventDefault();
+    console.log('📝 Guardando perfil...');
+    
+    // Datos personales
+    const firstName = document.getElementById('editFirstName').value.trim();
+    const lastName = document.getElementById('editLastName').value.trim();
+    const phone = document.getElementById('editPhone').value.trim();
+    const socialMedia = document.getElementById('editSocialMedia').value.trim();
+    
+    // Datos profesionales
+    const area = document.getElementById('editArea').value;
+    const specialty = document.getElementById('editSpecialty').value.trim();
+    const experience = document.getElementById('editExperience').value;
+    const education = document.getElementById('editEducation').value;
+    
+    if (!firstName || !lastName) {
+        showMessage('Nombre y apellido son requeridos', 'error');
+        return;
+    }
+    
+    // PAYLOAD COMPLETO
+    const payload = {
+        nombre: firstName,
+        apellido: lastName,
+        telefono: phone || null,
+        red_social: socialMedia || null,
+        area_trabajo: area || null,
+        especializacion: specialty || null,
+        anos_experiencia: experience ? parseInt(experience) : 0,
+        nivel_educativo: education || null
+    };
+    
+    console.log('📤 Enviando payload:', payload);
+    
+    try {
+        showMessage('Guardando cambios...', 'info');
+        
+        const response = await fetch('/api/update-profile', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        console.log('📥 Respuesta del servidor:', data);
+        
+        if (data.success) {
+            showMessage('✅ Perfil actualizado correctamente', 'success');
+            
+            // Esperar un momento para que se vea el mensaje
+            await new Promise(r => setTimeout(r, 800));
+            
+            // Recargar datos
+            await loadUserData();
+            
+            // Cambiar a pestaña de información
+            showTab('info');
+        } else {
+            showMessage(data.message || 'Error al actualizar perfil', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+        showMessage('Error de conexión con el servidor', 'error');
+    }
+}
+
+async function handleSkillSubmit(e) {
+    e.preventDefault();
+    console.log('🎯 Agregando habilidad...');
+    
+    const name = document.getElementById('skillName').value.trim();
+    const classification = document.getElementById('skillClassification').value;
+    const level = document.getElementById('skillLevel').value;
+    const years = document.getElementById('skillYears').value;
+    
+    if (!name || !classification) {
+        showMessage('Nombre y clasificación son requeridos', 'error');
+        return;
+    }
+    
+    const payload = {
+        nombre: name,
+        clasificacion: classification,
+        nivel: level,
+        anos_experiencia: parseInt(years) || 0
+    };
+    
+    try {
+        showMessage('Agregando habilidad...', 'info');
+        
+        const response = await fetch('/api/add_skill', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showMessage('Habilidad agregada correctamente', 'success');
+            document.getElementById('addSkillForm').reset();
+            await new Promise(r => setTimeout(r, 500));
+            await loadSkills();
+        } else {
+            showMessage(data.message || 'Error al agregar habilidad', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showMessage('Error de conexión', 'error');
+    }
+}
+
+// ================================================================
+// DELETE SKILL
+// ================================================================
+
+async function deleteSkill(skillId) {
+    if (!confirm('¿Estás seguro de eliminar esta habilidad?')) return;
+    
+    try {
+        const response = await fetch(`/api/delete_skill/${skillId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showMessage('Habilidad eliminada', 'success');
+            await loadSkills();
+        } else {
+            showMessage('Error al eliminar habilidad', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showMessage('Error de conexión', 'error');
+    }
+}
+
+// ================================================================
+// SISTEMA DE CALIFICACIÓN
+// ================================================================
+
+function setupRatingSystem() {
+    const stars = document.querySelectorAll('.star-input');
+    
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            selectedRating = parseInt(this.dataset.rating);
+            updateStarDisplay(selectedRating);
+        });
+    });
+}
+
+function updateStarDisplay(rating) {
+    const stars = document.querySelectorAll('.star-input');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.style.color = '#ffc107';
+        } else {
+            star.style.color = '#ddd';
+        }
+    });
+}
+
+// ================================================================
+// SUBIR FOTO
+// ================================================================
+
+function setupPhotoUpload() {
+    const input = document.getElementById('profilePhotoInput');
+    
+    if (input) {
+        input.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                showMessage('Formato no válido. Use JPG, PNG o GIF', 'error');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('Archivo muy grande. Máximo 5MB', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('profilePhoto', file);
+            
+            try {
+                showMessage('Subiendo foto...', 'info');
+                
+                const response = await fetch('/api/upload-profile-photo', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('Foto actualizada', 'success');
+                    updatePhotoDisplay(data.photoUrl);
+                } else {
+                    showMessage('Error al subir foto', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error de conexión', 'error');
+            }
+        });
+    }
+}
+
+function changeProfilePhoto() {
+    if (!isOwnProfile) return;
+    const input = document.getElementById('profilePhotoInput');
+    if (input) input.click();
+}
+
+function updatePhotoDisplay(url) {
+    const photo = document.getElementById('profilePhoto');
+    const preview = document.getElementById('editProfilePhotoPreview');
+    
+    if (photo) {
+        photo.innerHTML = `<img src="${url}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+    }
+    
+    if (preview) {
+        preview.innerHTML = `<img src="${url}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+    }
+}
+
+// ================================================================
+// SUBIR DOCUMENTOS
+// ================================================================
+
+window.uploadDocument = async function(docType) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.png,.jpg,.jpeg';
+    
+    input.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (file.size > 5 * 1024 * 1024) {
+            showMessage('Archivo muy grande. Máximo 5MB', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('document', file);
+        formData.append('docType', docType);
+        
+        try {
+            showMessage(`Subiendo ${docType}...`, 'info');
+            
+            const response = await fetch('/api/upload-document', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showMessage(`${docType} subido correctamente`, 'success');
+                await loadDocuments();
+            } else {
+                showMessage('Error al subir documento', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showMessage('Error de conexión', 'error');
+        }
+    };
+    
+    input.click();
+};
+
+// ================================================================
+// NAVEGACIÓN Y TABS
+// ================================================================
+
+function setupTabListeners() {
+    // Listener para la pestaña de calificaciones
+    const ratingsTab = document.querySelector('[onclick="showTab(\'ratings\')"]');
+    if (ratingsTab) {
+        ratingsTab.addEventListener('click', () => {
+            loadReceivedRatings();
+        });
+    }
+}
+
+function showTab(tabName) {
+    // Ocultar todas las pestañas
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Desactivar todos los botones
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Mostrar la pestaña seleccionada
+    const content = document.getElementById(tabName);
+    if (content) content.classList.add('active');
+    
+    // Activar el botón correspondiente
+    const tab = document.querySelector(`.tab[onclick="showTab('${tabName}')"]`);
+    if (tab) tab.classList.add('active');
+    
+    // Cargar datos específicos según la pestaña
+    if (tabName === 'ratings') {
+        loadReceivedRatings();
+    }
+}
+
+function cancelEdit() {
+    loadUserData();
+    showTab('info');
+}
+
+function goBackToDashboard() {
+    fetch('/get_user_session')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.user) {
+                if (data.user.role === 'Trabajador' || data.user.rol === 'Trabajador') {
+                    window.location.href = '/vista/index-trabajador.html';
+                } else {
+                    window.location.href = '/vista/index-agricultor.html';
+                }
+            } else {
+                window.location.href = '/vista/login-trabajador.html';
+            }
+        })
+        .catch(() => {
+            window.location.href = '/vista/index-trabajador.html';
+        });
+}
+
+function reportUser() {
+    if (confirm('¿Deseas reportar a este usuario?')) {
+        showMessage('Reporte enviado.', 'success');
+    }
+}
+
+// ================================================================
+// EXPORTAR PERFIL A PDF
+// ================================================================
+
+async function exportarPerfilPDF() {
+    const btnExport = document.getElementById('btnExportPDF');
+    const originalText = btnExport.innerHTML;
+    
+    btnExport.disabled = true;
+    btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando PDF...';
+    
+    try {
+        // Importar jsPDF desde el CDN
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Configuración
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 20;
+        let yPos = margin;
+        
+        // ===== HEADER - Logo y título =====
+        doc.setFillColor(74, 124, 89);
+        doc.rect(0, 0, pageWidth, 35, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text('AgroMatch', margin, 20);
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Perfil de Trabajador Agrícola', margin, 28);
+        
+        yPos = 50;
+        
+        // ===== INFORMACIÓN PERSONAL =====
+        doc.setTextColor(74, 124, 89);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Información Personal', margin, yPos);
+        
+        yPos += 10;
+        doc.setDrawColor(74, 124, 89);
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        
+        yPos += 8;
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        
+        const infoPersonal = [
+            ['Nombre:', document.getElementById('displayName')?.textContent || 'N/A'],
+            ['Email:', document.getElementById('displayEmail')?.textContent || 'N/A'],
+            ['Teléfono:', document.getElementById('displayPhone')?.textContent || 'N/A'],
+            ['Red Social:', document.getElementById('displaySocial')?.textContent || 'N/A']
+        ];
+        
+        infoPersonal.forEach(([label, value]) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, margin, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.text(value, margin + 35, yPos);
+            yPos += 7;
+        });
+        
+        yPos += 5;
+        
+        // ===== INFORMACIÓN PROFESIONAL =====
+        doc.setTextColor(74, 124, 89);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Información Profesional', margin, yPos);
+        
+        yPos += 10;
+        doc.setDrawColor(74, 124, 89);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        
+        yPos += 8;
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(11);
+        
+        const infoProfesional = [
+            ['Rol:', document.getElementById('displayRole')?.textContent || 'N/A'],
+            ['Área de trabajo:', document.getElementById('displayArea')?.textContent || 'N/A'],
+            ['Especialización:', document.getElementById('displaySpecialty')?.textContent || 'N/A'],
+            ['Años experiencia:', document.getElementById('displayExperience')?.textContent || 'N/A'],
+            ['Nivel educativo:', document.getElementById('displayEducation')?.textContent || 'N/A']
+        ];
+        
+        infoProfesional.forEach(([label, value]) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, margin, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.text(value, margin + 40, yPos);
+            yPos += 7;
+        });
+        
+        yPos += 5;
+        
+        // ===== HABILIDADES =====
+        const skillsContainer = document.getElementById('skillsList');
+        if (skillsContainer && !skillsContainer.querySelector('.empty-state')) {
+            doc.setTextColor(74, 124, 89);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Habilidades', margin, yPos);
+            
+            yPos += 10;
+            doc.setDrawColor(74, 124, 89);
+            doc.line(margin, yPos, pageWidth - margin, yPos);
+            
+            yPos += 8;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            
+            const skillCards = skillsContainer.querySelectorAll('.skill-card');
+            skillCards.forEach((card, index) => {
+                if (yPos > pageHeight - 30) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+                
+                const skillName = card.querySelector('h4')?.textContent || 'N/A';
+                const skillLevel = card.querySelector('.skill-badge')?.textContent?.trim() || 'N/A';
+                const skillYears = card.querySelector('.skill-experience')?.textContent?.trim() || '0 años';
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text(`• ${skillName}`, margin, yPos);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`(${skillLevel} - ${skillYears})`, margin + 50, yPos);
+                yPos += 6;
+            });
+            
+            yPos += 5;
+        }
+        
+        // ===== ESTADÍSTICAS =====
+        if (yPos > pageHeight - 60) {
+            doc.addPage();
+            yPos = margin;
+        }
+        
+        doc.setTextColor(74, 124, 89);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Estadísticas', margin, yPos);
+        
+        yPos += 10;
+        doc.setDrawColor(74, 124, 89);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        
+        yPos += 8;
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(11);
+        
+        const estadisticas = [
+            ['Trabajos completados:', document.getElementById('displayJobsCompleted')?.textContent || '0'],
+            ['Calificación promedio:', document.getElementById('displayRating')?.textContent?.match(/[\d.]+/)?.[0] || '0.0'],
+            ['Estado:', document.getElementById('displayStatus')?.textContent || 'Activo'],
+            ['Miembro desde:', document.getElementById('displayMemberSince')?.textContent || 'N/A']
+        ];
+        
+        estadisticas.forEach(([label, value]) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, margin, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.text(value, margin + 50, yPos);
+            yPos += 7;
+        });
+        
+        // ===== FOOTER =====
+        doc.setFontSize(9);
+        doc.setTextColor(128, 128, 128);
+        doc.setFont('helvetica', 'italic');
+        const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+        doc.text(
+            `Generado el ${new Date().toLocaleDateString('es-ES')} por AgroMatch | Página ${currentPage}`,
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+        );
+        
+        // ===== GUARDAR PDF =====
+        const fileName = `Perfil_${document.getElementById('displayName')?.textContent.replace(/\s+/g, '_')}_Trabajador_AgroMatch.pdf`;
+        doc.save(fileName);
+        
+        showMessage('✅ PDF descargado exitosamente', 'success');
+        
+    } catch (error) {
+        console.error('❌ Error generando PDF:', error);
+        showMessage('❌ Error al generar PDF: ' + error.message, 'error');
+    } finally {
+        btnExport.disabled = false;
+        btnExport.innerHTML = originalText;
+    }
+}
+
+// ================================================================
+// UTILIDADES
+// ================================================================
+
+function updateElement(id, value, isHtml = false) {
+    const el = document.getElementById(id);
+    if (el) {
+        if (isHtml) {
+            el.innerHTML = value;
+        } else {
+            el.textContent = value;
+        }
+    }
+}
+
+function setInputValue(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value || '';
+}
+
+function setSelectValue(id, value) {
+    const el = document.getElementById(id);
+    if (el && value) {
+        el.value = value;
+    }
+}
+
+function generateStarsDisplay(rating) {
+    const full = Math.floor(rating);
+    const stars = '⭐'.repeat(full) + '☆'.repeat(5 - full);
+    return `<span style="color: #ffc107;">${stars}</span> ${rating.toFixed(1)}`;
+}
+
+function generateStars(rating) {
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+        stars += i <= rating 
+            ? '<i class="fas fa-star"></i>' 
+            : '<i class="far fa-star"></i>';
+    }
+    return stars;
+}
+
+function getInitials(nombre) {
+    if (!nombre) return '??';
+    const words = nombre.trim().split(' ');
+    return words.map(w => w.charAt(0)).slice(0, 2).join('').toUpperCase();
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'No especificado';
+    return new Date(dateString).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function formatearFecha(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Hoy';
+    if (diffDays === 1) return 'Ayer';
+    if (diffDays < 7) return `Hace ${diffDays} días`;
+    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
+    if (diffDays < 365) return `Hace ${Math.floor(diffDays / 30)} meses`;
+    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    }).format(amount);
+}
+
+function showMessage(message, type = 'info') {
+    const existing = document.querySelectorAll('.temp-message');
+    existing.forEach(msg => msg.remove());
+    
+    const colors = {
+        success: '#d4edda',
+        error: '#f8d7da',
+        warning: '#fff3cd',
+        info: '#d1ecf1'
+    };
+    
+    const textColors = {
+        success: '#155724',
+        error: '#721c24',
+        warning: '#856404',
+        info: '#0c5460'
+    };
+    
+    const div = document.createElement('div');
+    div.className = 'temp-message';
+    div.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${colors[type]};
+        color: ${textColors[type]};
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-width: 350px;
+        font-size: 14px;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    div.textContent = message;
+    
+    document.body.appendChild(div);
+    
+    setTimeout(() => {
+        div.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (div.parentNode) {
+                div.parentNode.removeChild(div);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// ================================================================
+// ESTILOS CSS DINÁMICOS
+// ================================================================
+
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+    
+    .skills-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .skill-card {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .skill-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        border-color: #4a7c59;
+    }
+    
+    .skill-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .skill-header h4 {
+        margin: 0;
+        color: #1e3a2e;
+        font-size: 18px;
+        font-weight: 700;
+    }
+    
+    .btn-icon-delete {
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-icon-delete:hover {
+        background: rgba(220, 53, 69, 0.1);
+        transform: scale(1.1);
+    }
+    
+    .skill-info {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    
+    .skill-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .skill-category {
+        padding: 5px 12px;
+        background: rgba(74, 124, 89, 0.1);
+        color: #4a7c59;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .skill-experience {
+        color: #6c757d;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state p {
+        margin-top: 15px;
+        font-size: 16px;
+    }
+`;
+
+if (!document.querySelector('style[data-perfil-styles]')) {
+    style.setAttribute('data-perfil-styles', 'true');
+    document.head.appendChild(style);
+}
+
+// ================================================================
+// EXPONER FUNCIONES GLOBALES
+// ================================================================
+
+window.showTab = showTab;
+window.cancelEdit = cancelEdit;
+window.changeProfilePhoto = changeProfilePhoto;
+window.deleteSkill = deleteSkill;
+window.goBackToDashboard = goBackToDashboard;
+window.reportUser = reportUser;
+window.uploadDocument = uploadDocument;
+window.exportarPerfilPDF = exportarPerfilPDF;
+
+console.log('✅ Sistema de perfil COMPLETAMENTE FUSIONADO y cargado');

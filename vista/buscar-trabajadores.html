@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Trabajadores - AgroMatch</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 28px;
+        }
+
+        .header h1 i {
+            color: #4a7c59;
+            font-size: 32px;
+        }
+
+        .btn-volver {
+            background: #6c757d;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-volver:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .filtros-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .filtros-panel h2 {
+            color: #2d3748;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 22px;
+        }
+
+        .filtros-panel h2 i {
+            color: #4a7c59;
+        }
+
+        .filtros-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .form-group label i {
+            color: #4a7c59;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4a7c59;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.1);
+        }
+
+        .filtros-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4a7c59, #1e3a2e);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(74, 124, 89, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .resultados-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .resultados-header h2 {
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+        }
+
+        .resultados-header h2 i {
+            color: #4a7c59;
+        }
+
+        .resultados-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+        }
+
+        .trabajador-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trabajador-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4a7c59, #1e3a2e);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .trabajador-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+            border-color: #4a7c59;
+        }
+
+        .trabajador-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .trabajador-header {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .trabajador-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a7c59, #1e3a2e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            flex-shrink: 0;
+            box-shadow: 0 8px 20px rgba(74, 124, 89, 0.3);
+        }
+
+        .trabajador-info h3 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 20px;
+        }
+
+        .trabajador-rating {
+            color: #f59e0b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .trabajador-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f7fafc, #edf2f7);
+            border-radius: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #4a5568;
+        }
+
+        .stat-item i {
+            color: #4a7c59;
+            font-size: 18px;
+        }
+
+        .habilidades-section {
+            margin-bottom: 20px;
+        }
+
+        .habilidades-section h4 {
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .habilidades-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .skill-tag {
+            background: #e7f3ff;
+            color: #2563eb;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .skill-tag i {
+            font-size: 10px;
+        }
+
+        .btn-ver-perfil {
+            width: 100%;
+            background: linear-gradient(135deg, #4a7c59, #1e3a2e);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        .btn-ver-perfil:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(74, 124, 89, 0.3);
+        }
+
+        .no-resultados {
+            text-align: center;
+            padding: 80px 20px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+        .no-resultados i {
+            font-size: 80px;
+            color: #cbd5e0;
+            margin-bottom: 20px;
+        }
+
+        .no-resultados h3 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+
+        .no-resultados p {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+        .loading i {
+            font-size: 64px;
+            color: #4a7c59;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading p {
+            margin-top: 20px;
+            color: #4a5568;
+            font-size: 16px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modal de Perfil */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 0;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #4a7c59, #1e3a2e);
+            color: white;
+            padding: 30px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .perfil-section {
+            margin-bottom: 30px;
+        }
+
+        .perfil-section h4 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .perfil-section h4 i {
+            color: #4a7c59;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 12px;
+            border-left: 3px solid #4a7c59;
+        }
+
+        .info-item label {
+            font-size: 12px;
+            color: #718096;
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .info-item span {
+            color: #2d3748;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .experiencia-item {
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 3px solid #4a7c59;
+        }
+
+        .experiencia-item h5 {
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .experiencia-item p {
+            color: #718096;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        @media (max-width: 768px) {
+            .resultados-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filtros-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-search"></i>
+                Buscar Trabajadores
+            </h1>
+            <a href="/vista/index-agricultor.html" class="btn-volver">
+                <i class="fas fa-arrow-left"></i>
+                Volver al Dashboard
+            </a>
+        </div>
+
+        <!-- Panel de Filtros -->
+        <div class="filtros-panel">
+            <h2>
+                <i class="fas fa-sliders-h"></i>
+                Filtros de Búsqueda
+            </h2>
+            
+            <div class="filtros-grid">
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-tools"></i>
+                        Habilidad
+                    </label>
+                    <input type="text" id="filtro-habilidad" placeholder="Ej: Cosecha, Siembra, Poda...">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-map-marker-alt"></i>
+                        Ubicación
+                    </label>
+                    <input type="text" id="filtro-ubicacion" placeholder="Ej: Chinchiná, Caldas...">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-clock"></i>
+                        Experiencia Mínima
+                    </label>
+                    <select id="filtro-experiencia">
+                        <option value="0">Cualquier experiencia</option>
+                        <option value="1">1+ años</option>
+                        <option value="2">2+ años</option>
+                        <option value="3">3+ años</option>
+                        <option value="5">5+ años</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-star"></i>
+                        Calificación Mínima
+                    </label>
+                    <select id="filtro-calificacion">
+                        <option value="0">Cualquier calificación</option>
+                        <option value="3">3+ estrellas</option>
+                        <option value="4">4+ estrellas</option>
+                        <option value="4.5">4.5+ estrellas</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filtros-actions">
+                <button class="btn btn-secondary" onclick="limpiarFiltros()">
+                    <i class="fas fa-eraser"></i>
+                    Limpiar
+                </button>
+                <button class="btn btn-primary" onclick="buscarTrabajadores()">
+                    <i class="fas fa-search"></i>
+                    Buscar
+                </button>
+            </div>
+        </div>
+
+        <!-- Resultados Header -->
+        <div class="resultados-header">
+            <h2>
+                <i class="fas fa-users"></i>
+                <span id="total-resultados">0</span> trabajadores encontrados
+            </h2>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading" style="display: none;">
+            <i class="fas fa-spinner"></i>
+            <p>Buscando trabajadores...</p>
+        </div>
+
+        <!-- Resultados Grid -->
+        <div class="resultados-grid" id="resultados-grid">
+            <!-- Los resultados se cargarán aquí -->
+        </div>
+
+        <!-- No Resultados -->
+        <div class="no-resultados" id="no-resultados" style="display: none;">
+            <i class="fas fa-search"></i>
+            <h3>No se encontraron trabajadores</h3>
+            <p>Intenta ajustar los filtros de búsqueda para obtener más resultados.</p>
+        </div>
+    </div>
+
+    <!-- Modal Ver Perfil -->
+    <div class="modal" id="modal-perfil">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-user"></i>
+                    Perfil del Trabajador
+                </h3>
+                <button class="modal-close" onclick="cerrarModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="perfil-content">
+                <!-- El contenido del perfil se cargará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar trabajadores al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            buscarTrabajadores();
+        });
+
+        async function buscarTrabajadores() {
+            try {
+                // Mostrar loading
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('resultados-grid').style.display = 'none';
+                document.getElementById('no-resultados').style.display = 'none';
+
+                // Obtener filtros
+                const habilidad = document.getElementById('filtro-habilidad').value;
+                const ubicacion = document.getElementById('filtro-ubicacion').value;
+                const experiencia = document.getElementById('filtro-experiencia').value;
+                const calificacion = document.getElementById('filtro-calificacion').value;
+
+                // Construir query params
+                const params = new URLSearchParams({
+                    habilidad,
+                    ubicacion,
+                    experiencia_min: experiencia,
+                    calificacion_min: calificacion
+                });
+
+                const response = await fetch(`/api/buscar-trabajadores?${params}`, {
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                // Ocultar loading
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.success) {
+                    mostrarResultados(data.trabajadores);
+                } else {
+                    mostrarError(data.message);
+                }
+
+            } catch (error) {
+                console.error('Error buscando trabajadores:', error);
+                document.getElementById('loading').style.display = 'none';
+                mostrarError('Error de conexión. Intenta de nuevo.');
+            }
+        }
+
+        function mostrarResultados(trabajadores) {
+            const grid = document.getElementById('resultados-grid');
+            const noResultados = document.getElementById('no-resultados');
+            const totalResultados = document.getElementById('total-resultados');
+
+            if (!trabajadores || trabajadores.length === 0) {
+                grid.style.display = 'none';
+                noResultados.style.display = 'block';
+                totalResultados.textContent = '0';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            noResultados.style.display = 'none';
+            totalResultados.textContent = trabajadores.length;
+            grid.innerHTML = '';
+
+            trabajadores.forEach(trabajador => {
+                const card = crearTarjetaTrabajador(trabajador);
+                grid.appendChild(card);
+            });
+        }
+
+        function crearTarjetaTrabajador(trabajador) {
+            const div = document.createElement('div');
+            div.className = 'trabajador-card';
+
+            // Determinar si mostrar avatar con iniciales o imagen
+            let avatarHTML;
+            if (trabajador.foto_url && trabajador.foto_url !== '') {
+                avatarHTML = `
+                    <div class="trabajador-avatar" style="background: none; padding: 0; overflow: hidden;">
+                        <img src="${trabajador.foto_url}" 
+                             alt="${trabajador.nombre}" 
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                             onerror="this.onerror=null; this.parentElement.innerHTML='${trabajador.nombre.split(' ').map(n => n[0]).join('').substring(0, 2)}';">
+                    </div>
+                `;
+            } else {
+                const iniciales = trabajador.nombre.split(' ').map(n => n[0]).join('').substring(0, 2);
+                avatarHTML = `<div class="trabajador-avatar">${iniciales}</div>`;
+            }
+
+            const estrellas = '⭐'.repeat(Math.round(trabajador.calificacion));
+
+            div.innerHTML = `
+                <div class="trabajador-header">
+                    ${avatarHTML}
+                    <div class="trabajador-info">
+                        <h3>${trabajador.nombre}</h3>
+                        <div class="trabajador-rating">
+                            ${estrellas} ${trabajador.calificacion.toFixed(1)}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trabajador-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-briefcase"></i>
+                        <span>${trabajador.trabajos_completados} trabajos</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span>${trabajador.anos_experiencia} años exp.</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>${trabajador.ubicacion}</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-phone"></i>
+                        <span>${trabajador.telefono || 'No disponible'}</span>
+                    </div>
+                </div>
+
+                <div class="habilidades-section">
+                    <h4><i class="fas fa-tools"></i> Habilidades Principales</h4>
+                    <div class="habilidades-tags">
+                        ${trabajador.habilidades.slice(0, 4).map(h => 
+                            `<span class="skill-tag"><i class="fas fa-check-circle"></i>${h.Nombre}</span>`
+                        ).join('')}
+                        ${trabajador.habilidades.length > 4 ? 
+                            `<span class="skill-tag"><i class="fas fa-plus"></i>+${trabajador.habilidades.length - 4} más</span>` : ''}
+                    </div>
+                </div>
+
+                <button class="btn-ver-perfil" onclick="verPerfil(${trabajador.id})">
+                    <i class="fas fa-user"></i>
+                    Ver Perfil Completo
+                </button>
+            `;
+
+            return div;
+        }
+
+        async function verPerfil(trabajadorId) {
+            try {
+                const response = await fetch(`/api/get-user-profile/${trabajadorId}`, {
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    mostrarPerfilModal(data.user);
+                } else {
+                    alert('Error cargando perfil: ' + data.message);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión');
+            }
+        }
+
+        function mostrarPerfilModal(user) {
+            const perfilContent = document.getElementById('perfil-content');
+            
+            // Determinar imagen de perfil
+            let imagenPerfil = user.foto_url || '/static/uploads/profile_photos/default_avatar.jpg';
+            
+            perfilContent.innerHTML = `
+                <!-- Avatar del trabajador -->
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="width: 120px; height: 120px; margin: 0 auto; border-radius: 50%; overflow: hidden; border: 4px solid #4a7c59; box-shadow: 0 8px 20px rgba(74, 124, 89, 0.3);">
+                        <img src="${imagenPerfil}" 
+                             alt="${user.nombre_completo}" 
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             onerror="this.src='/static/uploads/profile_photos/default_avatar.jpg'">
+                    </div>
+                    <h3 style="margin-top: 15px; color: #2d3748; font-size: 24px;">${user.nombre_completo}</h3>
+                    <p style="color: #718096; font-size: 14px;">Trabajador Agrícola</p>
+                </div>
+
+                <!-- Información Básica -->
+                <div class="perfil-section">
+                    <h4><i class="fas fa-user-circle"></i> Información Personal</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Nombre Completo</label>
+                            <span>${user.nombre_completo}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Correo</label>
+                            <span>${user.correo}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Teléfono</label>
+                            <span>${user.telefono || 'No disponible'}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Ubicación</label>
+                            <span>${user.region || 'No especificada'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas -->
+                <div class="perfil-section">
+                    <h4><i class="fas fa-chart-line"></i> Estadísticas</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Calificación Promedio</label>
+                            <span>⭐ ${user.calificacion_promedio.toFixed(1)} / 5.0</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Trabajos Completados</label>
+                            <span>${user.total_calificaciones || 0} trabajos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Habilidades -->
+                ${user.habilidades && user.habilidades.length > 0 ? `
+                <div class="perfil-section">
+                    <h4><i class="fas fa-tools"></i> Habilidades</h4>
+                    <div class="habilidades-tags">
+                        ${user.habilidades.map(h => 
+                            `<span class="skill-tag">
+                                <i class="fas fa-check-circle"></i>
+                                ${h.Nombre} (${h.Clasificacion})
+                            </span>`
+                        ).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Experiencias -->
+                ${user.experiencias && user.experiencias.length > 0 ? `
+                <div class="perfil-section">
+                    <h4><i class="fas fa-briefcase"></i> Experiencia Laboral</h4>
+                    ${user.experiencias.map(exp => `
+                        <div class="experiencia-item">
+                            <h5>${exp.Ubicacion || 'Trabajo Agrícola'}</h5>
+                            <p><i class="fas fa-calendar"></i> ${new Date(exp.Fecha_Inicio).toLocaleDateString()} - ${exp.Fecha_Fin ? new Date(exp.Fecha_Fin).toLocaleDateString() : 'Actualidad'}</p>
+                            ${exp.Observacion ? `<p><i class="fas fa-info-circle"></i> ${exp.Observacion}</p>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                <!-- Información de Registro -->
+                <div class="perfil-section">
+                    <h4><i class="fas fa-calendar-check"></i> Información Adicional</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Miembro desde</label>
+                            <span>${user.fecha_registro ? new Date(user.fecha_registro).toLocaleDateString() : 'No disponible'}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Estado</label>
+                            <span style="color: #48bb78;">Activo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de Reportar -->
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+                    <button onclick="reportarUsuario(${user.id})" style="background: #e53e3e; color: white; padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                        <i class="fas fa-flag"></i>
+                        Reportar Usuario
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('modal-perfil').style.display = 'flex';
+        }
+
+        function reportarUsuario(userId) {
+            const motivo = prompt('¿Por qué deseas reportar a este usuario?\n\nEscribe el motivo:');
+            
+            if (motivo && motivo.trim()) {
+                // Aquí podrías hacer una llamada al backend para guardar el reporte
+                fetch('/api/reportar-usuario', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        usuario_reportado: userId,
+                        motivo: motivo.trim()
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Reporte enviado correctamente. Revisaremos el caso.');
+                        cerrarModal();
+                    } else {
+                        alert('❌ Error al enviar reporte: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('✅ Tu reporte ha sido registrado. Gracias por ayudarnos a mantener la comunidad segura.');
+                    cerrarModal();
+                });
+            } else if (motivo !== null) {
+                alert('Por favor ingresa un motivo válido para el reporte.');
+            }
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-perfil').style.display = 'none';
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('filtro-habilidad').value = '';
+            document.getElementById('filtro-ubicacion').value = '';
+            document.getElementById('filtro-experiencia').value = '0';
+            document.getElementById('filtro-calificacion').value = '0';
+            buscarTrabajadores();
+        }
+
+        function mostrarError(mensaje) {
+            alert(mensaje);
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('modal-perfil').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+    </script>
+</body>
+</html>

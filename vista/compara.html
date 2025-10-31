@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroMatch - Comparación</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #1e3a2e;
+            --primary-medium: #4a7c59;
+            --accent-light: #90EE90;
+            --background-overlay: rgba(255, 255, 255, 0.92);
+            --glass-backdrop: rgba(255, 255, 255, 0.15);
+            --shadow-primary: rgba(30, 58, 46, 0.15);
+            --gradient-primary: linear-gradient(135deg, #4a7c59, #1e3a2e);
+            --gradient-accent: linear-gradient(135deg, #90EE90, #4a7c59);
+            --glass-border: rgba(144, 238, 144, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--primary-dark);
+            background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(144,238,144,0.05));
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .compare-section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 4rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 0.7rem 1.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-medium);
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .compare-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .compare-card {
+            background: var(--background-overlay);
+            backdrop-filter: blur(20px);
+            padding: 3rem 2.5rem;
+            border-radius: 30px;
+            border: 3px solid;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(40px);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .compare-card:nth-child(1) { animation-delay: 0.2s; }
+        .compare-card:nth-child(2) { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .compare-card.traditional {
+            border-color: rgba(150, 150, 150, 0.4);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .compare-card.agromatch {
+            border-color: var(--accent-light);
+            box-shadow: 0 20px 50px rgba(74, 124, 89, 0.25);
+            background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(144,238,144,0.08));
+        }
+
+        .compare-card.agromatch::before {
+            content: 'NUESTRA PLATAFORMA';
+            position: absolute;
+            top: 25px;
+            right: -45px;
+            background: var(--gradient-accent);
+            color: var(--primary-dark);
+            padding: 0.5rem 3.5rem;
+            font-weight: 800;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            transform: rotate(45deg);
+            box-shadow: 0 4px 15px rgba(144, 238, 144, 0.5);
+        }
+
+        .compare-card:hover {
+            transform: translateY(-15px) scale(1.02);
+        }
+
+        .compare-card.traditional:hover {
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .compare-card.agromatch:hover {
+            box-shadow: 0 30px 70px rgba(74, 124, 89, 0.35);
+        }
+
+        .compare-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid rgba(144, 238, 144, 0.2);
+        }
+
+        .compare-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            font-size: 2.2rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transition: all 0.4s ease;
+        }
+
+        .compare-card.traditional .compare-icon {
+            background: linear-gradient(135deg, #888, #666);
+            color: white;
+        }
+
+        .compare-card.agromatch .compare-icon {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .compare-card:hover .compare-icon {
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        .compare-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.8rem;
+        }
+
+        .compare-card.traditional .compare-title {
+            color: #666;
+        }
+
+        .compare-card.agromatch .compare-title {
+            color: var(--primary-dark);
+        }
+
+        .compare-subtitle {
+            font-size: 1rem;
+            color: #777;
+            font-weight: 500;
+        }
+
+        .compare-features {
+            list-style: none;
+        }
+
+        .compare-features li {
+            padding: 1.2rem 0;
+            border-bottom: 1px solid rgba(144, 238, 144, 0.15);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .compare-features li:last-child {
+            border-bottom: none;
+        }
+
+        .compare-features li:hover {
+            padding-left: 0.5rem;
+        }
+
+        .compare-features li i {
+            font-size: 1.2rem;
+            min-width: 24px;
+            margin-top: 0.2rem;
+        }
+
+        .compare-card.traditional .compare-features li i.fa-times {
+            color: #e74c3c;
+        }
+
+        .compare-card.traditional .compare-features li i.fa-check {
+            color: #95a5a6;
+        }
+
+        .compare-card.agromatch .compare-features li i {
+            color: var(--accent-light);
+        }
+
+        .feature-text {
+            flex: 1;
+        }
+
+        .feature-text strong {
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+
+        @media (max-width: 968px) {
+            .compare-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            body {
+                padding: 1rem;
+            }
+
+            .compare-card {
+                padding: 2.5rem 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .compare-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="compare-section">
+        <div class="section-header">
+            <div class="section-tag">
+                <i class="fas fa-balance-scale"></i>
+                Comparación
+            </div>
+            <h2 class="section-title">AgroMatch vs Métodos Tradicionales</h2>
+            <p class="section-description">
+                Descubre las ventajas de usar una plataforma digital especializada frente a los métodos convencionales de búsqueda de empleo
+            </p>
+        </div>
+
+        <div class="compare-container">
+            <div class="compare-card traditional">
+                <div class="compare-header">
+                    <div class="compare-icon">
+                        <i class="fas fa-newspaper"></i>
+                    </div>
+                    <h3 class="compare-title">Métodos Tradicionales</h3>
+                    <p class="compare-subtitle">Búsqueda convencional</p>
+                </div>
+
+                <ul class="compare-features">
+                    <li>
+                        <i class="fas fa-times"></i>
+                        <span class="feature-text"><strong>Búsqueda dispersa:</strong> Necesitas buscar en periódicos, agencias y por recomendaciones</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-times"></i>
+                        <span class="feature-text"><strong>Proceso lento:</strong> Puede tomar días o semanas recibir respuesta</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-times"></i>
+                        <span class="feature-text"><strong>Información limitada:</strong> Detalles incompletos sobre el puesto</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-times"></i>
+                        <span class="feature-text"><strong>Sin verificación:</strong> Difícil validar la legitimidad de ofertas</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-times"></i>
+                        <span class="feature-text"><strong>Alcance limitado:</strong> Solo ofertas de tu área local</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-times"></i>
+                        <span class="feature-text"><strong>Múltiples aplicaciones:</strong> Llenar formularios repetitivos</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Contacto directo:</strong> Posibilidad de conversación cara a cara</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-times"></i>
+                        <span class="feature-text"><strong>Sin seguimiento:</strong> No hay registro de postulaciones</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="compare-card agromatch">
+                <div class="compare-header">
+                    <div class="compare-icon">
+                        <i class="fas fa-laptop"></i>
+                    </div>
+                    <h3 class="compare-title">AgroMatch</h3>
+                    <p class="compare-subtitle">Plataforma digital especializada</p>
+                </div>
+
+                <ul class="compare-features">
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Todo en un lugar:</strong> Todas las ofertas agrícolas centralizadas</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Comunicación directa:</strong> Contacto rápido con empleadores</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Información completa:</strong> Detalles claros de cada puesto</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Empresas verificadas:</strong> Empleadores validados por la plataforma</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Alcance nacional:</strong> Oportunidades en todo Colombia</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Perfil único:</strong> Postula con un solo clic usando tu CV digital</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Acceso 24/7:</strong> Busca empleos cuando te convenga</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-check"></i>
+                        <span class="feature-text"><strong>Seguimiento fácil:</strong> Historial de todas tus aplicaciones</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
