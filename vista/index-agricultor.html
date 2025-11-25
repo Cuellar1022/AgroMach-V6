@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>AgroMatch - Dashboard Agricultor</title>
+    <title data-i18n="page_title_farmer">AgroMatch - Dashboard Agricultor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <link rel="stylesheet" href="../assent/css/index-agricultor.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -20,22 +20,20 @@
         <!-- Header -->
         <div class="header">
             <div class="logo">
-                <img src="../assent/img/logo.jpg" alt="AgroMatch Logo" style="height:40px;">
+                <img src="../assent/img/logo-Agro.png" alt="AgroMatch Logo" style="height:40px;">
             </div>
             <div class="header-actions">
-                <!-- BOTÓN BUSCAR TRABAJADORES -->
                 <button class="btn btn-primary" onclick="window.location.href='buscar-trabajadores.html'">
-                    <i class="fas fa-users"></i> Buscar Trabajadores
+                    <i class="fas fa-users"></i> <span data-i18n="search_workers">Buscar Trabajadores</span>
                 </button>
                 <button class="btn btn-primary" onclick="createNewOffer()">
-                    <i class="fas fa-plus"></i> Nueva Oferta
+                    <i class="fas fa-plus"></i> <span data-i18n="new_offer">Nueva Oferta</span>
                 </button>
                 <div class="notification-icon" onclick="showNotifications()">
                     <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notificationBadge">3</span>
+                    <span class="notification-badge" id="notificationBadge">0</span>
                 </div>
                 
-                <!-- MENÚ DE USUARIO -->
                 <div class="user-menu-container">
                     <button class="profile-menu" onclick="toggleProfileMenu()" id="profileMenuBtn">
                         <i class="fas fa-user"></i>
@@ -48,53 +46,90 @@
         <div class="dashboard">
             <div class="main-panel">
                 <button class="create-offer-btn" onclick="createNewOffer()">
-                    <i class="fas fa-plus"></i> Crear Nueva Oferta de Trabajo
+                    <i class="fas fa-plus"></i> <span data-i18n="create_new_offer">Crear Nueva Oferta de Trabajo</span>
                 </button>
 
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-number" id="ofertasActivas">0</div>
-                        <div class="stat-label">Ofertas Activas</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="ofertasActivas">0</div>
+                            <div class="stat-label" data-i18n="active_offers">Ofertas Activas</div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number" id="trabajadoresContratados">0</div>
-                        <div class="stat-label">Trabajadores Contratados</div>
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="trabajadoresContratados">0</div>
+                            <div class="stat-label" data-i18n="hired_workers">Trabajadores Contratados</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Contenedor dinámico para las ofertas -->
-                <div id="ofertasContainer" class="ofertas-container">
-                    
-                    <!-- Las ofertas se cargarán aquí dinámicamente -->
+                <!-- Contenedor de ofertas -->
+                <div id="ofertasContainer" class="ofertas-container"></div>
+                
+                <!-- Paginación -->
+                <div class="pagination-container" id="paginationContainer" style="display: none;">
+                    <button class="pagination-btn" id="prevPageBtn" onclick="cambiarPaginaOfertas('prev')" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <div class="pagination-info">
+                        <span>Página <strong id="currentPageNum">1</strong> de <strong id="totalPagesNum">1</strong></span>
+                    </div>
+                    <button class="pagination-btn" id="nextPageBtn" onclick="cambiarPaginaOfertas('next')">
+                        <span>Siguiente</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
 
             <div class="side-panel">
+                <!-- Perfil del Agricultor -->
+                <div class="profile-card">
+                    <div class="profile-avatar-large" id="sidebarProfileAvatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="profile-name" id="sidebarProfileName">Cargando...</h3>
+                    <div class="profile-role">
+                        <i class="fas fa-seedling"></i>
+                        <span>Agricultor</span>
+                    </div>
+                    <div class="profile-rating" id="sidebarRating">
+                        <i class="far fa-star"></i>
+                        <i class="far fa-star"></i>
+                        <i class="far fa-star"></i>
+                        <i class="far fa-star"></i>
+                        <i class="far fa-star"></i>
+                        <span class="rating-value">0.0</span>
+                    </div>
+                </div>
+                
                 <div class="section-title">
                     <i class="fas fa-map-marked-alt"></i>
-                    Mapa de Ubicación
+                    <span data-i18n="location_map">Mapa de Ubicación</span>
                 </div>
                 <div id="map" style="height: 300px; border-radius: 15px; overflow: hidden; border: 2px solid #4a7c59; margin-bottom: 20px;"></div>
 
                 <div class="notifications">
                     <div class="section-title">
                         <i class="fas fa-bell"></i>
-                        Notificaciones Recientes
+                        <span data-i18n="recent_notifications">Notificaciones Recientes</span>
                     </div>
                     
                     <div class="notification-item" onclick="handleNotification(this)">
-                        <div class="notification-title">Nuevas postulaciones</div>
-                        <div class="notification-text">Tienes 2 trabajadores interesados en tu oferta de cosecha</div>
-                    </div>
-
-                    <div class="notification-item" onclick="handleNotification(this)">
-                        <div class="notification-title">Contrato próximo a finalizar</div>
-                        <div class="notification-text">El contrato de recolección termina mañana</div>
-                    </div>
-
-                    <div class="notification-item" onclick="handleNotification(this)">
-                        <div class="notification-title">Trabajador calificado</div>
-                        <div class="notification-text">Juan Pérez completó su trabajo con 5 estrellas</div>
+                        <div class="notification-icon-wrapper">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title" data-i18n="new_applications">Nuevas postulaciones</div>
+                            <div class="notification-text" data-i18n="new_applications_text">Tienes 2 trabajadores interesados</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -107,7 +142,7 @@
             <div class="modal-header">
                 <h2 class="modal-title">
                     <i class="fas fa-plus-circle"></i>
-                    Crear Nueva Oferta
+                    <span data-i18n="create_new_offer">Crear Nueva Oferta</span>
                 </h2>
                 <button class="modal-close" onclick="cerrarModalOferta()">
                     <i class="fas fa-times"></i>
@@ -119,13 +154,14 @@
                     <div class="form-group">
                         <label for="tituloOferta" class="form-label">
                             <i class="fas fa-tag"></i>
-                            Título de la Oferta
+                            <span data-i18n="offer_title">Título de la Oferta</span>
                         </label>
                         <input 
                             type="text" 
                             id="tituloOferta" 
                             name="titulo"
                             class="form-input" 
+                            data-i18n-placeholder="offer_title_example"
                             placeholder="Ej: Cosecha de Café - Finca El Paraíso"
                             required
                             maxlength="200">
@@ -134,12 +170,13 @@
                     <div class="form-group">
                         <label for="descripcionOferta" class="form-label">
                             <i class="fas fa-align-left"></i>
-                            Descripción del Trabajo
+                            <span data-i18n="job_description">Descripción del Trabajo</span>
                         </label>
                         <textarea 
                             id="descripcionOferta" 
                             name="descripcion"
                             class="form-textarea" 
+                            data-i18n-placeholder="job_description_placeholder"
                             placeholder="Describe detalladamente el trabajo a realizar, requisitos, horarios, ubicación, etc."
                             required
                             maxlength="1000"></textarea>
@@ -148,7 +185,7 @@
                     <div class="form-group">
                         <label for="pagoOferta" class="form-label">
                             <i class="fas fa-dollar-sign"></i>
-                            Pago Ofrecido (COP por día)
+                            <span data-i18n="offered_pay">Pago Ofrecido (COP por día)</span>
                         </label>
                         <input 
                             type="number" 
@@ -164,13 +201,14 @@
                     <div class="form-group">
                         <label for="ubicacionOferta" class="form-label">
                             <i class="fas fa-map-marker-alt"></i>
-                            Ubicación del Trabajo
+                            <span data-i18n="job_location">Ubicación del Trabajo</span>
                         </label>
                         <input 
                             type="text" 
                             id="ubicacionOferta" 
                             name="ubicacion"
                             class="form-input" 
+                            data-i18n-placeholder="location_example"
                             placeholder="Ej: Vereda El Paraíso, Chinchiná, Caldas"
                             required
                             maxlength="255">
@@ -181,11 +219,11 @@
             <div class="modal-actions">
                 <button type="button" class="btn-modal btn-cancelar" onclick="cerrarModalOferta()">
                     <i class="fas fa-times"></i>
-                    Cancelar
+                    <span data-i18n="cancel">Cancelar</span>
                 </button>
                 <button type="submit" form="formCrearOferta" class="btn-modal btn-crear" id="btnCrearOferta">
                     <i class="fas fa-check"></i>
-                    Crear Oferta
+                    <span data-i18n="create_offer">Crear Oferta</span>
                 </button>
             </div>
         </div>
@@ -197,7 +235,7 @@
             <div class="modal-header">
                 <h2 class="modal-title">
                     <i class="fas fa-edit"></i>
-                    Editar Oferta
+                    <span data-i18n="edit_offer">Editar Oferta</span>
                 </h2>
                 <button class="modal-close" onclick="cerrarModalEditar()">
                     <i class="fas fa-times"></i>
@@ -211,7 +249,7 @@
                     <div class="form-group">
                         <label for="editTituloOferta" class="form-label">
                             <i class="fas fa-tag"></i>
-                            Título de la Oferta
+                            <span data-i18n="offer_title">Título de la Oferta</span>
                         </label>
                         <input 
                             type="text" 
@@ -225,7 +263,7 @@
                     <div class="form-group">
                         <label for="editDescripcionOferta" class="form-label">
                             <i class="fas fa-align-left"></i>
-                            Descripción del Trabajo
+                            <span data-i18n="job_description">Descripción del Trabajo</span>
                         </label>
                         <textarea 
                             id="editDescripcionOferta" 
@@ -238,7 +276,7 @@
                     <div class="form-group">
                         <label for="editPagoOferta" class="form-label">
                             <i class="fas fa-dollar-sign"></i>
-                            Pago Ofrecido (COP por día)
+                            <span data-i18n="offered_pay">Pago Ofrecido (COP por día)</span>
                         </label>
                         <input 
                             type="number" 
@@ -253,7 +291,7 @@
                     <div class="form-group">
                         <label for="editUbicacionOferta" class="form-label">
                             <i class="fas fa-map-marker-alt"></i>
-                            Ubicación del Trabajo
+                            <span data-i18n="job_location">Ubicación del Trabajo</span>
                         </label>
                         <input 
                             type="text" 
@@ -269,23 +307,21 @@
             <div class="modal-actions">
                 <button type="button" class="btn-modal btn-cancelar" onclick="cerrarModalEditar()">
                     <i class="fas fa-times"></i>
-                    Cancelar
+                    <span data-i18n="cancel">Cancelar</span>
                 </button>
                 <button type="submit" form="formEditarOferta" class="btn-modal btn-crear" id="btnGuardarEdicion">
                     <i class="fas fa-save"></i>
-                    Guardar Cambios
+                    <span data-i18n="save_changes">Guardar Cambios</span>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- MODALES DE POSTULACIONES -->
-    
-    <!-- Modal para ver postulaciones -->
     <div class="modal" id="applicationsModal" style="display: none;">
         <div class="modal-content applications-modal">
             <div class="modal-header">
-                <h2><i class="fas fa-users"></i> Postulaciones</h2>
+                <h2><i class="fas fa-users"></i> <span data-i18n="applications">Postulaciones</span></h2>
                 <button class="close-btn" onclick="closeApplicationsModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -296,11 +332,10 @@
         </div>
     </div>
 
-    <!-- Modal para ver perfil del trabajador -->
     <div class="modal" id="workerProfileModal" style="display: none;">
         <div class="modal-content worker-profile-modal">
             <div class="modal-header">
-                <h2><i class="fas fa-user-circle"></i> Perfil del Trabajador</h2>
+                <h2><i class="fas fa-user-circle"></i> <span data-i18n="worker_profile">Perfil del Trabajador</span></h2>
                 <button class="close-btn" onclick="closeWorkerProfileModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -311,6 +346,87 @@
         </div>
     </div>
 
+    <script src="../js/language-manager.js"></script>
     <script src="../js/index-agricultor.js"></script>
+    
+    <!-- Script de paginación -->
+    <script>
+        // Variables de paginación para ofertas
+        let ofertasPaginaActual = 1;
+        const ofertasPorPagina = 3;
+        let todasLasOfertas = [];
+
+        // Función para cambiar de página
+        window.cambiarPaginaOfertas = function(direccion) {
+            const totalPaginas = Math.ceil(todasLasOfertas.length / ofertasPorPagina);
+            
+            if (direccion === 'prev' && ofertasPaginaActual > 1) {
+                ofertasPaginaActual--;
+            } else if (direccion === 'next' && ofertasPaginaActual < totalPaginas) {
+                ofertasPaginaActual++;
+            }
+            
+            mostrarOfertasPaginadas();
+        };
+
+        // Sobrescribir mostrarOfertasEnDashboard para usar paginación
+        const originalMostrarOfertas = window.mostrarOfertasEnDashboard;
+        window.mostrarOfertasEnDashboard = function(ofertas) {
+            todasLasOfertas = ofertas;
+            ofertasPaginaActual = 1;
+            
+            if (ofertas.length === 0) {
+                // Llamar a la función original si no hay ofertas
+                if (originalMostrarOfertas) {
+                    originalMostrarOfertas(ofertas);
+                }
+                const paginationContainer = document.getElementById('paginationContainer');
+                if (paginationContainer) paginationContainer.style.display = 'none';
+                return;
+            }
+            
+            mostrarOfertasPaginadas();
+        };
+
+        function mostrarOfertasPaginadas() {
+            const container = document.getElementById('ofertasContainer');
+            const paginationContainer = document.getElementById('paginationContainer');
+            
+            if (!container) return;
+            
+            const inicio = (ofertasPaginaActual - 1) * ofertasPorPagina;
+            const fin = inicio + ofertasPorPagina;
+            const ofertasPagina = todasLasOfertas.slice(inicio, fin);
+            
+            container.innerHTML = `
+                <div class="section-title" style="margin: 30px 0 20px 0;">
+                    <i class="fas fa-clipboard-list"></i>
+                    Mis Ofertas Publicadas (${todasLasOfertas.length})
+                </div>
+            `;
+            
+            ofertasPagina.forEach(oferta => {
+                const ofertaCard = crearTarjetaOferta(oferta);
+                container.appendChild(ofertaCard);
+            });
+            
+            // Actualizar paginación
+            const totalPaginas = Math.ceil(todasLasOfertas.length / ofertasPorPagina);
+            
+            if (totalPaginas > 1) {
+                paginationContainer.style.display = 'flex';
+                document.getElementById('currentPageNum').textContent = ofertasPaginaActual;
+                document.getElementById('totalPagesNum').textContent = totalPaginas;
+                
+                const prevBtn = document.getElementById('prevPageBtn');
+                const nextBtn = document.getElementById('nextPageBtn');
+                
+                prevBtn.disabled = ofertasPaginaActual === 1;
+                nextBtn.disabled = ofertasPaginaActual === totalPaginas;
+            } else {
+                paginationContainer.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>

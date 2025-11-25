@@ -55,9 +55,6 @@
             <button class="tab" onclick="showTab('edit')" id="editTab">
                 <i class="fas fa-edit"></i> Editar Perfil
             </button>
-            <button class="tab" onclick="showTab('farms')">
-                <i class="fas fa-tractor"></i> Mis Fincas
-            </button>
             <button class="tab" onclick="showTab('ratings')">
                 <i class="fas fa-star"></i> Calificaciones
             </button>
@@ -219,50 +216,6 @@
             </form>
         </div>
 
-        <!-- TAB: MIS FINCAS -->
-        <div id="farms" class="tab-content">
-            <h2 style="margin-bottom: 25px; color: #495057;">
-                <i class="fas fa-tractor"></i> Mis Fincas
-            </h2>
-            
-            <div class="info-card" style="margin-bottom: 25px;" id="addFarmSection">
-                <h3><i class="fas fa-plus-circle"></i> Agregar Nueva Finca</h3>
-                <form id="addFarmForm">
-                    <div class="info-grid">
-                        <div class="form-group">
-                            <label class="form-label">Nombre de la finca *</label>
-                            <input type="text" class="form-control" id="farmName" placeholder="Ej: Finca El Paraíso" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Ubicación *</label>
-                            <input type="text" class="form-control" id="farmLocation" placeholder="Vereda, Municipio, Departamento" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Área (hectáreas)</label>
-                            <input type="number" class="form-control" id="farmArea" placeholder="10" min="0" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control" id="farmDescription" placeholder="Breve descripción de la finca..."></textarea>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn" style="margin-top: 15px;">
-                        <i class="fas fa-plus"></i> Agregar Finca
-                    </button>
-                </form>
-            </div>
-
-            <div class="info-card">
-                <h3><i class="fas fa-list"></i> Fincas Registradas</h3>
-                <div id="farmsList">
-                    <div class="empty-state">
-                        <i class="fas fa-tractor" style="font-size: 48px; color: #ddd;"></i>
-                        <p>No tienes fincas registradas aún</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- TAB: CALIFICACIONES -->
         <div id="ratings" class="tab-content">
             <h2 style="margin-bottom: 25px; color: #495057;">
@@ -302,27 +255,42 @@
                     <div class="document-icon"><i class="fas fa-file-alt"></i></div>
                     <h4>Certificado de Predio</h4>
                     <p id="predioFileName">No subido</p>
-                    <button class="btn" onclick="uploadDocument('Certificado Predio')">
-                        <i class="fas fa-upload"></i> Subir Certificado
-                    </button>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="uploadDocument('Certificado Predio')">
+                            <i class="fas fa-upload"></i> Subir
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewDocument('Certificado Predio')" id="viewPredioBtn" style="display: none;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
                 </div>
 
                 <div class="document-card">
                     <div class="document-icon"><i class="fas fa-certificate"></i></div>
                     <h4>RUT o Cédula</h4>
                     <p id="rutFileName">No subido</p>
-                    <button class="btn" onclick="uploadDocument('RUT')">
-                        <i class="fas fa-upload"></i> Subir RUT
-                    </button>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="uploadDocument('RUT')">
+                            <i class="fas fa-upload"></i> Subir
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewDocument('RUT')" id="viewRutBtn" style="display: none;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
                 </div>
 
                 <div class="document-card">
                     <div class="document-icon"><i class="fas fa-folder"></i></div>
                     <h4>Documento Adicional</h4>
                     <p id="additionalFileName">Opcional</p>
-                    <button class="btn" onclick="uploadDocument('Adicional')">
-                        <i class="fas fa-upload"></i> Subir Documento
-                    </button>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="uploadDocument('Adicional')">
+                            <i class="fas fa-upload"></i> Subir
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewDocument('Adicional')" id="viewAdditionalBtn" style="display: none;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -341,6 +309,7 @@
     <div id="messageContainer"></div>
 
     <!-- Scripts -->
+    <script src="../js/language-manager.js"></script>
     <script src="/js/perfil-agricultor.js"></script>
 </body>
 </html>

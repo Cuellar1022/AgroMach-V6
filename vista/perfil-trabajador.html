@@ -329,27 +329,42 @@
                     <div class="document-icon"><i class="fas fa-file-alt"></i></div>
                     <h4>Currículum Vitae</h4>
                     <p id="cvFileName">No subido</p>
-                    <button class="btn" onclick="uploadDocument('CV')">
-                        <i class="fas fa-upload"></i> Subir CV
-                    </button>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="uploadDocument('CV')">
+                            <i class="fas fa-upload"></i> Subir
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewDocument('CV')" id="viewCVBtn" style="display: none;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
                 </div>
 
                 <div class="document-card">
                     <div class="document-icon"><i class="fas fa-certificate"></i></div>
                     <h4>Certificaciones</h4>
                     <p id="certFileName">No subido</p>
-                    <button class="btn" onclick="uploadDocument('Certificaciones')">
-                        <i class="fas fa-upload"></i> Subir Certificación
-                    </button>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="uploadDocument('Certificaciones')">
+                            <i class="fas fa-upload"></i> Subir
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewDocument('Certificaciones')" id="viewCertBtn" style="display: none;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
                 </div>
 
                 <div class="document-card">
                     <div class="document-icon"><i class="fas fa-folder"></i></div>
                     <h4>Documento Adicional</h4>
                     <p id="additionalFileName">Opcional</p>
-                    <button class="btn" onclick="uploadDocument('Adicional')">
-                        <i class="fas fa-upload"></i> Subir Documento
-                    </button>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="uploadDocument('Adicional')">
+                            <i class="fas fa-upload"></i> Subir
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewDocument('Adicional')" id="viewAdditionalBtn" style="display: none;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -368,6 +383,7 @@
     <div id="messageContainer"></div>
 
     <!-- Scripts -->
+    <script src="../js/language-manager.js"></script>
     <script src="/js/perfil-trabajador.js"></script>
 </body>
 </html>

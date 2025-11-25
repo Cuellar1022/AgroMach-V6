@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- Sección izquierda igual -->
+        <!-- Sección izquierda -->
         <div class="left-section">
             <div class="brand">
                 <div class="logo">
@@ -49,7 +49,7 @@
                     <p>Ingresa tus credenciales para acceder a tu cuenta</p>
                 </div>
 
-                <!-- FORMULARIO TRADICIONAL -->
+                <!-- FORMULARIO DE LOGIN -->
                 <form class="login-form" id="loginForm" action="http://localhost:5000/login.py" method="POST">
                     <input type="hidden" name="tipo_login" value="trabajador">
                     
@@ -76,7 +76,9 @@
                             <input type="checkbox" id="remember" name="recordar_sesion">
                             <label for="remember">Recordarme</label>
                         </div>
-                        <a href="#" class="forgot-password" onclick="openForgotModal()">¿Olvidaste tu contraseña?</a>
+                        <a href="javascript:void(0)" class="forgot-password" onclick="openForgotModal()">
+                            ¿Olvidaste tu contraseña?
+                        </a>
                     </div>
 
                     <!-- Botón de iniciar sesión -->
@@ -93,13 +95,13 @@
                 </form>
 
                 <!-- Separador -->
-                <div style="display: flex; align-items: center; margin: 20px 0; text-align: center;">
-                    <hr style="flex: 1; border: none; height: 1px; background: #e2e8f0;">
-                    <span style="padding: 0 15px; background: white; color: #64748b; font-size: 14px; font-weight: 500;">O continúa con</span>
-                    <hr style="flex: 1; border: none; height: 1px; background: #e2e8f0;">
+                <div class="social-divider">
+                    <hr>
+                    <span>O continúa con</span>
+                    <hr>
                 </div>
 
-                <!-- BOTONES DE REDES SOCIALES - SOLO AQUÍ AL FINAL -->
+                <!-- Botones de redes sociales -->
                 <div class="social-buttons">
                     <button type="button" class="btn-social btn-google" onclick="continueWithGoogle()">
                         <i class="fab fa-google"></i>
@@ -110,15 +112,12 @@
                         <span>Continuar con Facebook</span>
                     </button>
                 </div>
-
-                <!-- Área para mensajes -->
-                <div id="message-area" style="margin-top: 15px; text-align: center;"></div>
             </div>
         </div>
     </div>
 
     <!-- Modal de recuperación de contraseña -->
-    <div id="forgotPasswordModal" class="modal" style="display: none;">
+    <div id="forgotPasswordModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeForgotModal()">&times;</span>
             <div class="modal-header">
@@ -129,7 +128,8 @@
                 <div class="form-group">
                     <div class="input-container">
                         <i class="fas fa-envelope input-icon"></i>
-                        <input type="email" id="forgotEmail" name="email_recuperacion" placeholder="Correo electrónico" required>
+                        <input type="email" id="forgotEmail" name="email_recuperacion" 
+                               placeholder="Correo electrónico" required>
                     </div>
                 </div>
                 <button type="submit" class="btn-send">
@@ -141,7 +141,7 @@
     </div>
 
     <!-- Modal de notificación -->
-    <div id="notification-modal" class="modal-overlay" style="display: none;">
+    <div id="notification-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
                 <i id="modal-icon" class="fas fa-check-circle"></i>
@@ -156,9 +156,36 @@
         </div>
     </div>
 
-    <!-- CSS -->
+    <!-- ESTILOS CSS -->
     <style>
-        /* Botones sociales */
+        /* ============================================ */
+        /* DIVISOR SOCIAL */
+        /* ============================================ */
+        .social-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .social-divider hr {
+            flex: 1;
+            border: none;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .social-divider span {
+            padding: 0 15px;
+            background: white;
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* ============================================ */
+        /* BOTONES SOCIALES */
+        /* ============================================ */
         .social-buttons {
             display: flex;
             gap: 15px;
@@ -201,7 +228,7 @@
             left: 100%;
         }
 
-        /* Botón de Google - Colores correctos */
+        /* Botón Google */
         .btn-google {
             border-color: #db4437;
             color: #db4437;
@@ -232,7 +259,7 @@
             color: white;
         }
 
-        /* Botón de Facebook - Colores correctos */
+        /* Botón Facebook */
         .btn-facebook {
             border-color: #1877f2;
             color: #1877f2;
@@ -256,28 +283,74 @@
             color: white;
         }
 
-        /* Responsivo */
-        @media (max-width: 480px) {
-            .social-buttons {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .btn-social {
-                width: 100%;
-                padding: 16px 20px;
-            }
+        /* ============================================ */
+        /* MODALES */
+        /* ============================================ */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Modal styles */
+        .modal .modal-content {
+            background-color: white;
+            margin: auto;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .modal .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .modal .close:hover,
+        .modal .close:focus {
+            color: #000;
+        }
+
+        .modal .modal-header {
+            padding: 10px 0 20px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal .modal-header h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .modal .modal-header p {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
         .modal-overlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -366,22 +439,30 @@
         .btn-modal.error:hover {
             box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
         }
+
+        /* ============================================ */
+        /* RESPONSIVE */
+        /* ============================================ */
+        @media (max-width: 480px) {
+            .social-buttons {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .btn-social {
+                width: 100%;
+                padding: 16px 20px;
+            }
+        }
     </style>
 
+    <!-- JAVASCRIPT -->
     <script>
-        function continueWithGoogle() {
-            showNotification('Abriendo formulario de Google...', 'info', 'Conectando');
-            window.location.href = '/auth/google/login';
-        }
+        console.log('🚀 AgroMatch Login - Versión Final Inicializada');
 
-        function continueWithFacebook() {
-            showNotification('Abriendo formulario de Facebook...', 'info', 'Conectando');
-            window.location.href = '/auth/facebook/login';
-        }
-
-        function goToRegister() {
-            window.location.href = 'seleccion-rol.html';
-        }
+        // ================================================================
+        // FUNCIONES DE NAVEGACIÓN Y UI
+        // ================================================================
 
         function togglePassword() {
             const field = document.getElementById('password');
@@ -398,21 +479,65 @@
             }
         }
 
+        function goToRegister() {
+            window.location.href = 'seleccion-rol.html';
+        }
+
+        function continueWithGoogle() {
+            showNotification('Redirigiendo a Google...', 'info', 'Conectando');
+            setTimeout(() => {
+                window.location.href = '/auth/google/login';
+            }, 500);
+        }
+
+        function continueWithFacebook() {
+            showNotification('Redirigiendo a Facebook...', 'info', 'Conectando');
+            setTimeout(() => {
+                window.location.href = '/auth/facebook/login';
+            }, 500);
+        }
+
+        // ================================================================
+        // MODAL DE RECUPERACIÓN DE CONTRASEÑA
+        // ================================================================
+
         function openForgotModal() {
-            document.getElementById('forgotPasswordModal').style.display = 'flex';
+            const modal = document.getElementById('forgotPasswordModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                const emailInput = document.getElementById('forgotEmail');
+                if (emailInput) {
+                    emailInput.value = '';
+                    setTimeout(() => emailInput.focus(), 100);
+                }
+            }
         }
 
         function closeForgotModal() {
-            document.getElementById('forgotPasswordModal').style.display = 'none';
+            const modal = document.getElementById('forgotPasswordModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
 
-        function showNotification(message, type, title = '') {
+        // ================================================================
+        // SISTEMA DE NOTIFICACIONES
+        // ================================================================
+
+        function showNotification(message, type = 'info', title = '') {
             const modal = document.getElementById('notification-modal');
             const icon = document.getElementById('modal-icon');
             const titleEl = document.getElementById('modal-title');
             const messageEl = document.getElementById('modal-message');
             const closeBtn = document.getElementById('modal-close');
             
+            if (!modal || !icon || !titleEl || !messageEl || !closeBtn) {
+                console.error('❌ Elementos del modal no encontrados');
+                alert(message);
+                return;
+            }
+            
+            // Configurar según tipo
             if (type === 'success') {
                 icon.className = 'fas fa-check-circle modal-success';
                 titleEl.textContent = title || 'Éxito';
@@ -430,22 +555,158 @@
             messageEl.innerHTML = message;
             modal.style.display = 'flex';
             
+            // Cerrar modal
             closeBtn.onclick = function() {
                 modal.style.display = 'none';
             };
             
-            document.addEventListener('keydown', function(e) {
+            // Cerrar con Escape
+            const escapeHandler = function(e) {
                 if (e.key === 'Escape') {
                     modal.style.display = 'none';
+                    document.removeEventListener('keydown', escapeHandler);
                 }
-            });
+            };
+            document.addEventListener('keydown', escapeHandler);
             
-            modal.addEventListener('click', function(e) {
+            // Cerrar al hacer clic fuera
+            const clickHandler = function(e) {
                 if (e.target === modal) {
                     modal.style.display = 'none';
+                    modal.removeEventListener('click', clickHandler);
+                }
+            };
+            modal.addEventListener('click', clickHandler);
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // ================================================================
+        // INICIALIZACIÓN
+        // ================================================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Sistema cargado correctamente');
+
+            // FORMULARIO DE RECUPERACIÓN
+            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+            
+            if (forgotPasswordForm) {
+                forgotPasswordForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const emailInput = document.getElementById('forgotEmail');
+                    const email = emailInput.value.trim();
+                    
+                    console.log('📧 Solicitando recuperación para:', email);
+                    
+                    // Validaciones
+                    if (!email) {
+                        showNotification(
+                            'Por favor ingresa tu correo electrónico',
+                            'error',
+                            'Campo requerido'
+                        );
+                        return;
+                    }
+                    
+                    if (!isValidEmail(email)) {
+                        showNotification(
+                            'Por favor ingresa un correo electrónico válido',
+                            'error',
+                            'Email inválido'
+                        );
+                        return;
+                    }
+                    
+                    // Deshabilitar botón
+                    const submitButton = forgotPasswordForm.querySelector('button[type="submit"]');
+                    const originalContent = submitButton.innerHTML;
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+                    
+                    try {
+                        // Enviar al backend
+                        const response = await fetch('/api/request-password-reset', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ email: email })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        console.log('📨 Respuesta del servidor:', data);
+                        
+                        if (data.success) {
+                            closeForgotModal();
+                            
+                            showNotification(
+                                `<strong>¡Correo enviado!</strong><br><br>
+                                Hemos enviado un enlace de recuperación a <strong>${email}</strong>.<br><br>
+                                Por favor revisa tu bandeja de entrada y tu carpeta de spam.<br><br>
+                                <em>El enlace expirará en 30 minutos.</em>`,
+                                'success',
+                                'Revisa tu correo'
+                            );
+                            
+                            forgotPasswordForm.reset();
+                        } else {
+                            showNotification(
+                                data.message || 'Error al procesar la solicitud. Intenta nuevamente.',
+                                'error',
+                                'Error'
+                            );
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Error:', error);
+                        showNotification(
+                            'Error de conexión con el servidor. Por favor verifica tu conexión e intenta nuevamente.',
+                            'error',
+                            'Error de conexión'
+                        );
+                    } finally {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalContent;
+                    }
+                });
+            }
+            
+            // Eventos de cierre de modal
+            const closeButton = document.querySelector('#forgotPasswordModal .close');
+            if (closeButton) {
+                closeButton.addEventListener('click', closeForgotModal);
+            }
+            
+            const forgotModal = document.getElementById('forgotPasswordModal');
+            if (forgotModal) {
+                forgotModal.addEventListener('click', function(e) {
+                    if (e.target === forgotModal) {
+                        closeForgotModal();
+                    }
+                });
+            }
+            
+            // Cerrar con Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeForgotModal();
+                    const notifModal = document.getElementById('notification-modal');
+                    if (notifModal && notifModal.style.display === 'flex') {
+                        notifModal.style.display = 'none';
+                    }
                 }
             });
-        }
+        });
+
+        // ================================================================
+        // MENSAJES DE URL
+        // ================================================================
 
         window.addEventListener('load', function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -454,19 +715,15 @@
             
             if (message) {
                 const decodedMessage = decodeURIComponent(message);
+                showNotification(decodedMessage, type || 'info');
                 
-                if (type === 'success') {
-                    showNotification(decodedMessage, 'success');
-                } else if (type === 'error') {
-                    showNotification(decodedMessage, 'error');
-                } else {
-                    showNotification(decodedMessage, 'info');
-                }
-                
+                // Limpiar URL
                 const cleanURL = window.location.pathname;
                 window.history.replaceState({}, document.title, cleanURL);
             }
         });
+
+        console.log('✅ Todos los scripts cargados exitosamente');
     </script>
 </body>
 </html>

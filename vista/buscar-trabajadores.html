@@ -546,6 +546,249 @@
             margin: 5px 0;
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        .btn-documentos {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-documentos:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-reportar {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-reportar:hover {
+            background: #c53030;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+        }
+
+        /* Modal de Documentos */
+        .modal-documentos {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-documentos-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.4);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .modal-documentos-header {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-documentos-header h3 {
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-documentos-body {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .documento-item {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .documento-item:hover {
+            border-color: #3b82f6;
+            background: white;
+            transform: translateX(5px);
+        }
+
+        .documento-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .documento-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .documento-details h5 {
+            color: #2d3748;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .documento-details p {
+            color: #718096;
+            font-size: 13px;
+        }
+
+        .btn-ver-documento {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-ver-documento:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .sin-documentos {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .sin-documentos i {
+            font-size: 64px;
+            color: #cbd5e0;
+            margin-bottom: 20px;
+        }
+
+        .sin-documentos h4 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .sin-documentos p {
+            color: #718096;
+        }
+
+        /* Visor de Documentos */
+        .document-viewer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .document-viewer-content {
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            max-height: 90vh;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.5);
+        }
+
+        .document-viewer-header {
+            background: #2d3748;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .document-viewer-header h4 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .document-viewer-body {
+            flex: 1;
+            overflow: hidden;
+            background: #f7fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .document-viewer-body iframe,
+        .document-viewer-body img {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
         @media (max-width: 768px) {
             .resultados-grid {
                 grid-template-columns: 1fr;
@@ -562,6 +805,10 @@
 
             .info-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
             }
         }
     </style>
@@ -689,7 +936,45 @@
         </div>
     </div>
 
+    <!-- Modal de Documentos -->
+    <div class="modal-documentos" id="modal-documentos">
+        <div class="modal-documentos-content">
+            <div class="modal-documentos-header">
+                <h3>
+                    <i class="fas fa-file-alt"></i>
+                    Documentos del Trabajador
+                </h3>
+                <button class="modal-close" onclick="cerrarModalDocumentos()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-documentos-body" id="documentos-content">
+                <!-- Los documentos se cargarán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Visor de Documentos -->
+    <div class="document-viewer" id="document-viewer">
+        <div class="document-viewer-content">
+            <div class="document-viewer-header">
+                <h4 id="document-viewer-title">
+                    <i class="fas fa-file"></i>
+                    Visualizando documento
+                </h4>
+                <button class="modal-close" onclick="cerrarVisorDocumento()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="document-viewer-body" id="document-viewer-body">
+                <!-- El documento se mostrará aquí -->
+            </div>
+        </div>
+    </div>
+
     <script>
+        let currentUserId = null;
+
         // Cargar trabajadores al inicio
         document.addEventListener('DOMContentLoaded', function() {
             buscarTrabajadores();
@@ -697,18 +982,15 @@
 
         async function buscarTrabajadores() {
             try {
-                // Mostrar loading
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('resultados-grid').style.display = 'none';
                 document.getElementById('no-resultados').style.display = 'none';
 
-                // Obtener filtros
                 const habilidad = document.getElementById('filtro-habilidad').value;
                 const ubicacion = document.getElementById('filtro-ubicacion').value;
                 const experiencia = document.getElementById('filtro-experiencia').value;
                 const calificacion = document.getElementById('filtro-calificacion').value;
 
-                // Construir query params
                 const params = new URLSearchParams({
                     habilidad,
                     ubicacion,
@@ -721,8 +1003,6 @@
                 });
 
                 const data = await response.json();
-
-                // Ocultar loading
                 document.getElementById('loading').style.display = 'none';
 
                 if (data.success) {
@@ -765,7 +1045,6 @@
             const div = document.createElement('div');
             div.className = 'trabajador-card';
 
-            // Determinar si mostrar avatar con iniciales o imagen
             let avatarHTML;
             if (trabajador.foto_url && trabajador.foto_url !== '') {
                 avatarHTML = `
@@ -842,6 +1121,7 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    currentUserId = trabajadorId;
                     mostrarPerfilModal(data.user);
                 } else {
                     alert('Error cargando perfil: ' + data.message);
@@ -856,11 +1136,9 @@
         function mostrarPerfilModal(user) {
             const perfilContent = document.getElementById('perfil-content');
             
-            // Determinar imagen de perfil
             let imagenPerfil = user.foto_url || '/static/uploads/profile_photos/default_avatar.jpg';
             
             perfilContent.innerHTML = `
-                <!-- Avatar del trabajador -->
                 <div style="text-align: center; margin-bottom: 30px;">
                     <div style="width: 120px; height: 120px; margin: 0 auto; border-radius: 50%; overflow: hidden; border: 4px solid #4a7c59; box-shadow: 0 8px 20px rgba(74, 124, 89, 0.3);">
                         <img src="${imagenPerfil}" 
@@ -872,7 +1150,6 @@
                     <p style="color: #718096; font-size: 14px;">Trabajador Agrícola</p>
                 </div>
 
-                <!-- Información Básica -->
                 <div class="perfil-section">
                     <h4><i class="fas fa-user-circle"></i> Información Personal</h4>
                     <div class="info-grid">
@@ -895,7 +1172,6 @@
                     </div>
                 </div>
 
-                <!-- Estadísticas -->
                 <div class="perfil-section">
                     <h4><i class="fas fa-chart-line"></i> Estadísticas</h4>
                     <div class="info-grid">
@@ -910,7 +1186,6 @@
                     </div>
                 </div>
 
-                <!-- Habilidades -->
                 ${user.habilidades && user.habilidades.length > 0 ? `
                 <div class="perfil-section">
                     <h4><i class="fas fa-tools"></i> Habilidades</h4>
@@ -925,7 +1200,6 @@
                 </div>
                 ` : ''}
 
-                <!-- Experiencias -->
                 ${user.experiencias && user.experiencias.length > 0 ? `
                 <div class="perfil-section">
                     <h4><i class="fas fa-briefcase"></i> Experiencia Laboral</h4>
@@ -939,7 +1213,6 @@
                 </div>
                 ` : ''}
 
-                <!-- Información de Registro -->
                 <div class="perfil-section">
                     <h4><i class="fas fa-calendar-check"></i> Información Adicional</h4>
                     <div class="info-grid">
@@ -954,9 +1227,12 @@
                     </div>
                 </div>
 
-                <!-- Botón de Reportar -->
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
-                    <button onclick="reportarUsuario(${user.id})" style="background: #e53e3e; color: white; padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <div class="action-buttons">
+                    <button class="btn-action btn-documentos" onclick="verDocumentos(${user.id})">
+                        <i class="fas fa-file-alt"></i>
+                        Ver Documentos
+                    </button>
+                    <button class="btn-action btn-reportar" onclick="reportarUsuario(${user.id})">
                         <i class="fas fa-flag"></i>
                         Reportar Usuario
                     </button>
@@ -966,12 +1242,146 @@
             document.getElementById('modal-perfil').style.display = 'flex';
         }
 
+        async function verDocumentos(userId) {
+            try {
+                // Mostrar loading
+                const documentosContent = document.getElementById('documentos-content');
+                documentosContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #4a7c59; margin-bottom: 20px;"></i>
+                        <p style="color: #4a5568;">Cargando documentos...</p>
+                    </div>
+                `;
+                document.getElementById('modal-documentos').style.display = 'flex';
+
+                console.log('Intentando cargar documentos para usuario:', userId);
+
+                const response = await fetch(`/api/documentos-usuario/${userId}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`Error ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('Datos recibidos:', data);
+
+                if (data.success) {
+                    mostrarModalDocumentos(data.documentos || data.documents || []);
+                } else {
+                    documentosContent.innerHTML = `
+                        <div class="sin-documentos">
+                            <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>
+                            <h4>Error al cargar documentos</h4>
+                            <p>${data.message || 'No se pudieron cargar los documentos'}</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error completo:', error);
+                const documentosContent = document.getElementById('documentos-content');
+                documentosContent.innerHTML = `
+                    <div class="sin-documentos">
+                        <i class="fas fa-exclamation-circle" style="color: #e53e3e;"></i>
+                        <h4>Error de conexión</h4>
+                        <p>No se pudo conectar con el servidor. Verifica que el endpoint /api/documentos-usuario/${userId} exista.</p>
+                        <p style="font-size: 12px; color: #a0aec0; margin-top: 10px;">Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function mostrarModalDocumentos(documentos) {
+            const documentosContent = document.getElementById('documentos-content');
+
+            if (!documentos || documentos.length === 0) {
+                documentosContent.innerHTML = `
+                    <div class="sin-documentos">
+                        <i class="fas fa-folder-open"></i>
+                        <h4>No hay documentos disponibles</h4>
+                        <p>Este usuario no ha subido ningún documento aún.</p>
+                    </div>
+                `;
+            } else {
+                documentosContent.innerHTML = documentos.map(doc => {
+                    const extension = doc.archivo_url.split('.').pop().toLowerCase();
+                    let iconClass = 'fa-file';
+                    
+                    if (extension === 'pdf') iconClass = 'fa-file-pdf';
+                    else if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) iconClass = 'fa-file-image';
+                    else if (['doc', 'docx'].includes(extension)) iconClass = 'fa-file-word';
+                    else if (['xls', 'xlsx'].includes(extension)) iconClass = 'fa-file-excel';
+
+                    return `
+                        <div class="documento-item">
+                            <div class="documento-info">
+                                <div class="documento-icon">
+                                    <i class="fas ${iconClass}"></i>
+                                </div>
+                                <div class="documento-details">
+                                    <h5>${doc.tipo_documento || 'Documento'}</h5>
+                                    <p>Subido el ${new Date(doc.fecha_subida).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                            <button class="btn-ver-documento" onclick="abrirVisorDocumento('${doc.archivo_url}', '${doc.tipo_documento || 'Documento'}', '${extension}')">
+                                <i class="fas fa-eye"></i>
+                                Ver
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('modal-documentos').style.display = 'flex';
+        }
+
+        function abrirVisorDocumento(url, titulo, extension) {
+            const viewer = document.getElementById('document-viewer');
+            const viewerTitle = document.getElementById('document-viewer-title');
+            const viewerBody = document.getElementById('document-viewer-body');
+
+            viewerTitle.innerHTML = `<i class="fas fa-file"></i> ${titulo}`;
+
+            if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) {
+                viewerBody.innerHTML = `<img src="${url}" alt="${titulo}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+            } else if (extension === 'pdf') {
+                viewerBody.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf"></iframe>`;
+            } else {
+                viewerBody.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <i class="fas fa-file" style="font-size: 64px; color: #cbd5e0; margin-bottom: 20px;"></i>
+                        <h4 style="color: #4a5568; margin-bottom: 10px;">Vista previa no disponible</h4>
+                        <p style="color: #718096;">Este tipo de archivo no se puede visualizar en el navegador.</p>
+                    </div>
+                `;
+            }
+
+            viewer.style.display = 'flex';
+        }
+
+        function cerrarVisorDocumento() {
+            document.getElementById('document-viewer').style.display = 'none';
+        }
+
+        function cerrarModalDocumentos() {
+            document.getElementById('modal-documentos').style.display = 'none';
+        }
+
         function reportarUsuario(userId) {
-            const motivo = prompt('¿Por qué deseas reportar a este usuario?\n\nEscribe el motivo:');
+            const motivo = prompt('¿Por qué deseas reportar a este usuario?\n\nEscribe el motivo (mínimo 10 caracteres):');
             
-            if (motivo && motivo.trim()) {
-                // Aquí podrías hacer una llamada al backend para guardar el reporte
-                fetch('/api/reportar-usuario', {
+            if (motivo && motivo.trim().length >= 10) {
+                fetch('/api/reportar-usuario-v2', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -985,10 +1395,10 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ Reporte enviado correctamente. Revisaremos el caso.');
+                        alert('✅ Reporte enviado correctamente. Un administrador lo revisará pronto.');
                         cerrarModal();
                     } else {
-                        alert('❌ Error al enviar reporte: ' + data.message);
+                        alert('❌ Error: ' + data.message);
                     }
                 })
                 .catch(error => {
@@ -997,7 +1407,11 @@
                     cerrarModal();
                 });
             } else if (motivo !== null) {
-                alert('Por favor ingresa un motivo válido para el reporte.');
+                if (motivo.trim().length < 10) {
+                    alert('El motivo debe tener al menos 10 caracteres. Por favor, sé más específico.');
+                } else {
+                    alert('Por favor ingresa un motivo válido para el reporte.');
+                }
             }
         }
 
@@ -1017,10 +1431,22 @@
             alert(mensaje);
         }
 
-        // Cerrar modal al hacer clic fuera
+        // Cerrar modales al hacer clic fuera
         document.getElementById('modal-perfil').addEventListener('click', function(e) {
             if (e.target === this) {
                 cerrarModal();
+            }
+        });
+
+        document.getElementById('modal-documentos').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModalDocumentos();
+            }
+        });
+
+        document.getElementById('document-viewer').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarVisorDocumento();
             }
         });
     </script>

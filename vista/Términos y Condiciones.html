@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Términos y Condiciones - AgroMatch</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #ecfdf5 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+            color: white;
+            padding: 3rem 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .header-title h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .header-subtitle {
+            font-size: 1.25rem;
+            color: #dcfce7;
+        }
+
+        .header-date {
+            font-size: 0.875rem;
+            color: #bbf7d0;
+            margin-top: 0.5rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+
+        .intro-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #dcfce7;
+        }
+
+        .intro-header {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .icon-box {
+            background: #dcfce7;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            stroke: #16a34a;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .intro-content h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .intro-content p {
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        .terms-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            border: 1px solid #dcfce7;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-bottom: 2rem;
+        }
+
+        .terms-content {
+            padding: 2rem;
+        }
+
+        .term-section {
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .term-section:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        .term-header {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .term-body {
+            flex: 1;
+        }
+
+        .term-body h3 {
+            font-size: 1.25rem;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+            font-weight: bold;
+        }
+
+        .term-body p {
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+
+        .footer p {
+            margin: 0.5rem 0;
+        }
+
+        /* Scrollbar personalizado */
+        .terms-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terms-container::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        .terms-container::-webkit-scrollbar-thumb {
+            background: #16a34a;
+            border-radius: 4px;
+        }
+
+        .terms-container::-webkit-scrollbar-thumb:hover {
+            background: #15803d;
+        }
+
+        @media (max-width: 768px) {
+            .header-title h1 {
+                font-size: 2rem;
+            }
+
+            .header-subtitle {
+                font-size: 1rem;
+            }
+
+            .container {
+                padding: 1.5rem 1rem;
+            }
+
+            .intro-card, .terms-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <svg class="icon" style="width: 3rem; height: 3rem; stroke: white;" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <h1>AGROMATCH</h1>
+            </div>
+            <p class="header-subtitle">Términos y Condiciones de Uso</p>
+            <p class="header-date">Última actualización: Noviembre 2025</p>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Intro Card -->
+        <div class="intro-card">
+            <div class="intro-header">
+                <div class="icon-box">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="intro-content">
+                    <h2>Importante</h2>
+                    <p>
+                        Por favor, lea cuidadosamente estos Términos y Condiciones antes de utilizar la plataforma AgroMatch. 
+                        Al acceder o utilizar nuestros servicios, usted acepta estar legalmente vinculado por estos términos. 
+                        Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestra plataforma.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terms Container -->
+        <div class="terms-container">
+            <div class="terms-content">
+                <!-- Section 1 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>1. Aceptación de los Términos</h3>
+                            <p>Al acceder y utilizar AgroMatch, usted acepta estar sujeto a estos Términos y Condiciones, todas las leyes y regulaciones aplicables, y acepta que es responsable del cumplimiento de las leyes locales aplicables. Si no está de acuerdo con alguno de estos términos, está prohibido usar o acceder a esta plataforma.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>2. Uso de la Plataforma</h3>
+                            <p>AgroMatch es una plataforma digital que conecta agricultores con trabajadores agrícolas temporales mediante geolocalización. Los usuarios se comprometen a: (a) Proporcionar información veraz y actualizada, (b) Mantener la confidencialidad de sus credenciales de acceso, (c) No utilizar la plataforma para fines ilegales o no autorizados, (d) Respetar los derechos de otros usuarios.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>3. Registro y Cuentas de Usuario</h3>
+                            <p>Para utilizar AgroMatch, los usuarios deben registrarse y crear una cuenta. Existen dos tipos de usuarios: Agricultores (empleadores) y Trabajadores Agrícolas. Cada usuario es responsable de mantener la seguridad de su cuenta y contraseña. AgroMatch no se hace responsable de pérdidas derivadas del uso no autorizado de su cuenta.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>4. Servicios de Contratación</h3>
+                            <p>AgroMatch facilita la conexión entre agricultores y trabajadores, pero no es parte de ninguna relación laboral. La plataforma no garantiza la disponibilidad, calidad o idoneidad de los trabajadores. Los agricultores son los únicos responsables de verificar las credenciales, experiencia y documentación legal de los trabajadores antes de contratarlos.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>5. Geolocalización y Privacidad</h3>
+                            <p>AgroMatch utiliza servicios de geolocalización para optimizar la búsqueda y conexión entre usuarios. Al utilizar la plataforma, usted autoriza el acceso y uso de su ubicación geográfica. Esta información se utiliza exclusivamente para mejorar la experiencia del usuario y no se comparte con terceros sin su consentimiento expreso.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 6 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>6. Protección de Datos Personales</h3>
+                            <p>Nos comprometemos a proteger su información personal de acuerdo con las leyes aplicables de protección de datos. Los datos recopilados incluyen: nombre, información de contacto, ubicación, experiencia laboral y documentación relevante. Esta información se utiliza únicamente para facilitar las conexiones laborales y mejorar nuestros servicios.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 7 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>7. Responsabilidades del Agricultor</h3>
+                            <p>Los agricultores se comprometen a: (a) Cumplir con todas las leyes laborales aplicables, (b) Proporcionar condiciones de trabajo seguras y adecuadas, (c) Pagar salarios justos y acordados, (d) Respetar los derechos laborales de los trabajadores, (e) Proporcionar información veraz sobre las oportunidades laborales publicadas.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 8 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>8. Responsabilidades del Trabajador</h3>
+                            <p>Los trabajadores se comprometen a: (a) Proporcionar información veraz sobre su experiencia y habilidades, (b) Cumplir con los términos acordados de trabajo, (c) Mantener estándares profesionales de conducta, (d) Respetar las propiedades y recursos del empleador, (e) Comunicar cualquier problema o conflicto de manera oportuna.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 9 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>9. Limitación de Responsabilidad</h3>
+                            <p>AgroMatch actúa únicamente como intermediario tecnológico. No nos hacemos responsables de: (a) La calidad del trabajo realizado, (b) Disputas entre agricultores y trabajadores, (c) Accidentes o lesiones durante el trabajo, (d) Incumplimientos contractuales entre las partes, (e) Pérdidas económicas derivadas del uso de la plataforma.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 10 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>10. Tarifas y Pagos</h3>
+                            <p>El uso básico de AgroMatch puede estar sujeto a tarifas de suscripción o comisiones por conexiones exitosas. Todas las tarifas se comunicarán claramente antes de su aplicación. Los pagos entre agricultores y trabajadores son responsabilidad exclusiva de las partes involucradas.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 11 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>11. Contenido del Usuario</h3>
+                            <p>Los usuarios son responsables del contenido que publican en la plataforma. Nos reservamos el derecho de eliminar contenido que consideremos inapropiado, ofensivo o que viole estos términos. Al publicar contenido, usted otorga a AgroMatch una licencia no exclusiva para usar dicho contenido con fines operativos de la plataforma.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 12 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>12. Suspensión y Terminación</h3>
+                            <p>Nos reservamos el derecho de suspender o terminar cuentas de usuario que violen estos términos, sin previo aviso. Los usuarios pueden cancelar sus cuentas en cualquier momento. La terminación no afecta las obligaciones contraídas antes de la cancelación.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 13 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>13. Modificaciones a los Términos</h3>
+                            <p>AgroMatch se reserva el derecho de modificar estos Términos y Condiciones en cualquier momento. Las modificaciones entrarán en vigor inmediatamente después de su publicación en la plataforma. El uso continuado de la plataforma después de dichas modificaciones constituye su aceptación de los nuevos términos.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 14 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>14. Ley Aplicable y Jurisdicción</h3>
+                            <p>Estos Términos y Condiciones se regirán e interpretarán de acuerdo con las leyes del país donde opera AgroMatch. Cualquier disputa relacionada con estos términos estará sujeta a la jurisdicción exclusiva de los tribunales competentes.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 15 -->
+                <div class="term-section">
+                    <div class="term-header">
+                        <div class="icon-box">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="term-body">
+                            <h3>15. Contacto</h3>
+                            <p>Para preguntas, comentarios o inquietudes sobre estos Términos y Condiciones, puede contactarnos a través de: Email: legal@agromatch.com | Teléfono: +57 (XXX) XXX-XXXX | Dirección: [Dirección de la empresa]</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2025 AgroMatch. Todos los derechos reservados.</p>
+            <p>Marketplace de mano de obra agrícola en tiempo real</p>
+        </div>
+    </div>
+</body>
+</html>

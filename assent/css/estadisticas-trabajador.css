@@ -10,7 +10,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     /* Fondo solo con la imagen, sin overlay verde */
     background: 
-        url('../img/img7.gif') center/cover no-repeat,
+        url('../img/img7.jpg') center/cover no-repeat,
         linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
     background-attachment: fixed;
     min-height: 100vh;

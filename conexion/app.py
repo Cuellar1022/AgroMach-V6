@@ -34,9 +34,18 @@ from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
 import traceback
 from conexion import execute_query, get_db_connection
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from flask import request, jsonify, redirect, render_template_string
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
+from flask_mail import Mail, Message
+import mysql.connector
+from mysql.connector import Error
 
 
 app = Flask(__name__)
+
 
 # ================================================================
 # CONFIGURACIÓN DE SESIONES CON CLAVE AUTOMÁTICA
@@ -415,6 +424,7 @@ def apply_job():
             'success': False,
             'message': f'Error interno del servidor: {str(e)}'
         }), 500
+
 
 # ================================================================
 # CONFIGURACIÓN DE RUTAS ESTÁTICAS MODIFICADAS PARA TU ESTRUCTURA
@@ -1235,7 +1245,7 @@ def validate_session():
 @app.route('/')
 def index():
     """Ruta principal - redirige al login de trabajador"""
-    return redirect('/vista/login-trabajador.html')
+    return redirect('/vista/inicio-sesion.html')
 
 @app.route('/registro-trabajador')
 def registro_trabajador():
@@ -4293,93 +4303,110 @@ def get_historial_empleos():
         print(f"Error obteniendo historial: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ===================================================================
+# ENDPOINT PARA OBTENER POSTULACIONES (MEJORADO CON DEBUG)
+# ===================================================================
 @app.route('/api/postulaciones', methods=['GET'])
-@require_login
 def get_postulaciones():
-    """API para obtener postulaciones del trabajador"""
+    """API para obtener postulaciones del trabajador - MEJORADO"""
     try:
+        if 'user_id' not in session:
+            return jsonify({
+                'success': False,
+                'error': 'Sesión no válida'
+            }), 401
+        
         user_id = session['user_id']
-        user_role = session.get('user_role')
+        user_role = session.get('user_role') or session.get('role')
+        
+        print(f"📊 Obteniendo postulaciones para user_id: {user_id}, role: {user_role}")
         
         if user_role != 'Trabajador':
-            return jsonify({'success': False, 'error': 'Acceso denegado'}), 403
+            return jsonify({
+                'success': False,
+                'error': 'Acceso denegado - Solo trabajadores'
+            }), 403
         
-        # Consulta para obtener postulaciones
-        postulaciones = execute_query("""
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Consulta mejorada
+        query = """
             SELECT 
-                p.ID_Postulacion,
-                ot.Titulo,
-                CONCAT(u.Nombre, ' ', u.Apellido) as Agricultor,
-                u.ID_Usuario as Agricultor_ID,
-                p.Fecha_Postulacion,
-                p.Estado,
-                ot.Pago_Ofrecido,
-                pr.Nombre_Finca as Ubicacion,
-                ot.Descripcion,
-                ot.Fecha_Publicacion,
-                ot.ID_Oferta,
-                (SELECT COUNT(*) FROM Mensaje m 
-                 WHERE (m.ID_Emisor = %s AND m.ID_Receptor = u.ID_Usuario) 
-                    OR (m.ID_Emisor = u.ID_Usuario AND m.ID_Receptor = %s)) as Mensajes
+                p.ID_Postulacion as id,
+                ot.Titulo as titulo,
+                CONCAT(u.Nombre, ' ', u.Apellido) as agricultor,
+                u.ID_Usuario as agricultorId,
+                p.Fecha_Postulacion as fechaPostulacion,
+                p.Estado as estado,
+                ot.Pago_Ofrecido as pago,
+                COALESCE(pr.Nombre_Finca, 'Colombia') as ubicacion,
+                ot.Descripcion as descripcion,
+                ot.Fecha_Publicacion as fechaPublicacion,
+                ot.ID_Oferta as oferta_id
             FROM Postulacion p
-            JOIN Oferta_Trabajo ot ON p.ID_Oferta = ot.ID_Oferta
-            JOIN Usuario u ON ot.ID_Agricultor = u.ID_Usuario
+            INNER JOIN Oferta_Trabajo ot ON p.ID_Oferta = ot.ID_Oferta
+            INNER JOIN Usuario u ON ot.ID_Agricultor = u.ID_Usuario
             LEFT JOIN Predio pr ON u.ID_Usuario = pr.ID_Usuario
             WHERE p.ID_Trabajador = %s
             ORDER BY p.Fecha_Postulacion DESC
-        """, (user_id, user_id, user_id))
+        """
         
+        cursor.execute(query, (user_id,))
+        postulaciones = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        
+        print(f"✅ {len(postulaciones)} postulaciones encontradas")
+        
+        # Procesar las postulaciones
         postulaciones_list = []
-        if postulaciones:
-            for post in postulaciones:
-                # Simular duración basada en tipo de trabajo
-                descripcion = post['Descripcion'].lower()
-                if 'cosecha' in descripcion:
-                    duracion = "3-5 días"
-                elif 'siembra' in descripcion:
-                    duracion = "2-4 días"
-                elif 'mantenimiento' in descripcion:
-                    duracion = "1-2 días"
-                else:
-                    duracion = "1-3 días"
-                
-                # Fecha de inicio estimada
-                fecha_inicio = post['Fecha_Publicacion'] + timedelta(days=7)
-                
-                postulacion_data = {
-                    'id': post['ID_Postulacion'],
-                    'titulo': post['Titulo'],
-                    'agricultor': post['Agricultor'],
-                    'agricultorId': post['Agricultor_ID'],
-                    'fechaPostulacion': post['Fecha_Postulacion'].isoformat(),
-                    'estado': post['Estado'],
-                    'pago': float(post['Pago_Ofrecido']),
-                    'ubicacion': post['Ubicacion'] if post['Ubicacion'] else 'Colombia',
-                    'descripcion': post['Descripcion'],
-                    'duracion': duracion,
-                    'fechaInicio': fecha_inicio.strftime('%Y-%m-%d'),
-                    'ultimaActualizacion': post['Fecha_Postulacion'].isoformat(),
-                    'mensajes': post['Mensajes'],
-                    'prioridad': 'alta' if post['Pago_Ofrecido'] > 50000 else 'media' if post['Pago_Ofrecido'] > 40000 else 'baja',
-                    'oferta_id': post['ID_Oferta']
-                }
-                
-                # Información adicional según estado
-                if post['Estado'] == 'Rechazada':
-                    postulacion_data['motivoRechazo'] = 'Perfil no coincide con los requisitos'
-                
-                postulaciones_list.append(postulacion_data)
+        for post in postulaciones:
+            # Simular duración basada en descripción
+            descripcion = post['descripcion'].lower() if post['descripcion'] else ''
+            if 'cosecha' in descripcion:
+                duracion = "3-5 días"
+            elif 'siembra' in descripcion:
+                duracion = "2-4 días"
+            elif 'mantenimiento' in descripcion:
+                duracion = "1-2 días"
+            else:
+                duracion = "1-3 días"
+            
+            postulacion_data = {
+                'id': post['id'],
+                'titulo': post['titulo'],
+                'agricultor': post['agricultor'],
+                'agricultorId': post['agricultorId'],
+                'fechaPostulacion': post['fechaPostulacion'].isoformat(),
+                'estado': post['estado'],
+                'pago': float(post['pago']),
+                'ubicacion': post['ubicacion'],
+                'descripcion': post['descripcion'],
+                'duracion': duracion,
+                'ultimaActualizacion': post['fechaPostulacion'].isoformat(),
+                'oferta_id': post['oferta_id']
+            }
+            
+            postulaciones_list.append(postulacion_data)
         
         return jsonify({
             'success': True,
-            'postulaciones': postulaciones_list
+            'postulaciones': postulaciones_list,
+            'total': len(postulaciones_list)
         })
         
     except Exception as e:
-        print(f"Error obteniendo postulaciones: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        print(f"❌ Error obteniendo postulaciones: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Error del servidor: {str(e)}'
+        }), 500
 
-print("✅ Todas las rutas para favoritos, historial, postulaciones y archivos estáticos cargadas correctamente")
+print("✅ Endpoints de postulaciones corregidos y cargados")
 
 # ================================================================
 # RUTA PARA CANCELAR POSTULACIONES
@@ -12231,6 +12258,3458 @@ print("     'puntuacion': 5,")
 print("     'comentario': 'Excelente trabajo!'")
 print("   }")
 print("=" * 70)
+
+# ================================================================
+# ENDPOINT: ACTUALIZAR IDIOMA
+# ================================================================
+@app.route('/api/update-language', methods=['POST'])
+def update_language():
+    """Actualiza el idioma preferido del usuario"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        data = request.get_json()
+        language = data.get('language', 'es')
+        user_id = session['user_id']
+        
+        # Validar idioma
+        valid_languages = ['es', 'en', 'zh']
+        if language not in valid_languages:
+            language = 'es'
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        # Actualizar idioma en la base de datos
+        # Primero verificamos si existe la columna idioma en la tabla usuarios
+        cursor.execute("SHOW COLUMNS FROM usuarios LIKE 'idioma'")
+        column_exists = cursor.fetchone()
+        
+        if not column_exists:
+            # Si no existe la columna, la creamos
+            cursor.execute("ALTER TABLE usuarios ADD COLUMN idioma VARCHAR(5) DEFAULT 'es'")
+            conexion.commit()
+        
+        # Actualizar el idioma del usuario
+        query = "UPDATE usuarios SET idioma = %s WHERE id_usuario = %s"
+        cursor.execute(query, (language, user_id))
+        conexion.commit()
+        
+        # Guardar en sesión
+        session['user_language'] = language
+        
+        cursor.close()
+        conexion.close()
+        
+        print(f"✅ Idioma actualizado a '{language}' para usuario ID: {user_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Idioma actualizado correctamente',
+            'language': language
+        })
+        
+    except Exception as e:
+        print(f"❌ Error actualizando idioma: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# ENDPOINT: ACTUALIZAR DISPONIBILIDAD
+# ================================================================
+@app.route('/api/update-availability', methods=['POST'])
+def update_availability():
+    """Actualiza la disponibilidad del trabajador"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        data = request.get_json()
+        user_id = session['user_id']
+        
+        # Datos de disponibilidad
+        available = data.get('available', False)
+        visibility = data.get('visibility', 'visible')  # visible, paused, hidden
+        days = data.get('days', [])
+        start_time = data.get('startTime', '08:00')
+        end_time = data.get('endTime', '18:00')
+        unavailable_dates = data.get('unavailableDates', [])
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        # Verificar si existe la tabla disponibilidad_trabajador
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS disponibilidad_trabajador (
+                id_disponibilidad INT AUTO_INCREMENT PRIMARY KEY,
+                id_usuario INT NOT NULL,
+                disponible BOOLEAN DEFAULT FALSE,
+                visibilidad ENUM('visible', 'paused', 'hidden') DEFAULT 'visible',
+                dias_disponibles JSON,
+                hora_inicio TIME,
+                hora_fin TIME,
+                fechas_no_disponibles JSON,
+                fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+                UNIQUE KEY (id_usuario)
+            )
+        """)
+        conexion.commit()
+        
+        # Preparar datos JSON
+        days_json = json.dumps(days)
+        unavailable_dates_json = json.dumps(unavailable_dates)
+        
+        # Validar visibilidad
+        valid_visibility = ['visible', 'paused', 'hidden']
+        if visibility not in valid_visibility:
+            visibility = 'visible'
+        
+        # Verificar si ya existe un registro para este usuario
+        cursor.execute("SELECT id_disponibilidad FROM disponibilidad_trabajador WHERE id_usuario = %s", (user_id,))
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Actualizar registro existente
+            query = """
+                UPDATE disponibilidad_trabajador 
+                SET disponible = %s,
+                    visibilidad = %s,
+                    dias_disponibles = %s, 
+                    hora_inicio = %s, 
+                    hora_fin = %s, 
+                    fechas_no_disponibles = %s
+                WHERE id_usuario = %s
+            """
+            cursor.execute(query, (available, visibility, days_json, start_time, end_time, unavailable_dates_json, user_id))
+        else:
+            # Insertar nuevo registro
+            query = """
+                INSERT INTO disponibilidad_trabajador 
+                (id_usuario, disponible, visibilidad, dias_disponibles, hora_inicio, hora_fin, fechas_no_disponibles)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query, (user_id, available, visibility, days_json, start_time, end_time, unavailable_dates_json))
+        
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+        
+        print(f"✅ Disponibilidad actualizada para usuario ID: {user_id}")
+        print(f"   - Disponible: {available}")
+        print(f"   - Visibilidad: {visibility}")
+        print(f"   - Días: {days}")
+        print(f"   - Horario: {start_time} - {end_time}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Disponibilidad actualizada correctamente'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error actualizando disponibilidad: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# ENDPOINT: OBTENER DISPONIBILIDAD DEL TRABAJADOR
+# ================================================================
+@app.route('/api/get-availability', methods=['GET'])
+def get_availability():
+    """Obtiene la disponibilidad actual del trabajador"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        user_id = session['user_id']
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        query = """
+            SELECT disponible, dias_disponibles, hora_inicio, hora_fin, 
+                   fechas_no_disponibles, fecha_actualizacion
+            FROM disponibilidad_trabajador
+            WHERE id_usuario = %s
+        """
+        cursor.execute(query, (user_id,))
+        availability = cursor.fetchone()
+        
+        cursor.close()
+        conexion.close()
+        
+        if availability:
+            # Parsear JSON
+            availability['dias_disponibles'] = json.loads(availability['dias_disponibles']) if availability['dias_disponibles'] else []
+            availability['fechas_no_disponibles'] = json.loads(availability['fechas_no_disponibles']) if availability['fechas_no_disponibles'] else []
+            
+            # Convertir time a string
+            if availability['hora_inicio']:
+                availability['hora_inicio'] = str(availability['hora_inicio'])
+            if availability['hora_fin']:
+                availability['hora_fin'] = str(availability['hora_fin'])
+            if availability['fecha_actualizacion']:
+                availability['fecha_actualizacion'] = availability['fecha_actualizacion'].isoformat()
+            
+            return jsonify({
+                'success': True,
+                'availability': availability
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'availability': None
+            })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo disponibilidad: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# ENDPOINT: OBTENER CONFIGURACIONES DEL USUARIO (ACTUALIZADO)
+# ================================================================
+@app.route('/api/get-user-settings', methods=['GET'])
+def get_user_settings_updated():
+    """Obtiene todas las configuraciones del usuario incluyendo idioma y disponibilidad"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        user_id = session['user_id']
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        # Obtener idioma del usuario
+        cursor.execute("SELECT idioma FROM usuarios WHERE id_usuario = %s", (user_id,))
+        user_data = cursor.fetchone()
+        language = user_data.get('idioma', 'es') if user_data else 'es'
+        
+        # Obtener disponibilidad
+        cursor.execute("""
+            SELECT disponible, dias_disponibles, hora_inicio, hora_fin, 
+                   fechas_no_disponibles
+            FROM disponibilidad_trabajador
+            WHERE id_usuario = %s
+        """, (user_id,))
+        availability = cursor.fetchone()
+        
+        # Obtener otras configuraciones (notificaciones, etc.)
+        cursor.execute("""
+            SELECT configuraciones 
+            FROM usuarios 
+            WHERE id_usuario = %s
+        """, (user_id,))
+        config_data = cursor.fetchone()
+        
+        cursor.close()
+        conexion.close()
+        
+        # Preparar respuesta
+        settings = {
+            'language': language,
+            'availability': None,
+            'notifications': {
+                'emailNotifications': True,
+                'emailUpdates': True
+            }
+        }
+        
+        # Agregar disponibilidad si existe
+        if availability:
+            settings['availability'] = {
+                'available': availability['disponible'],
+                'days': json.loads(availability['dias_disponibles']) if availability['dias_disponibles'] else [],
+                'startTime': str(availability['hora_inicio']) if availability['hora_inicio'] else '08:00',
+                'endTime': str(availability['hora_fin']) if availability['hora_fin'] else '18:00',
+                'unavailableDates': json.loads(availability['fechas_no_disponibles']) if availability['fechas_no_disponibles'] else []
+            }
+        
+        # Agregar otras configuraciones si existen
+        if config_data and config_data.get('configuraciones'):
+            try:
+                other_settings = json.loads(config_data['configuraciones'])
+                if 'notifications' in other_settings:
+                    settings['notifications'] = other_settings['notifications']
+            except:
+                pass
+        
+        return jsonify({
+            'success': True,
+            'settings': settings
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo configuraciones: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# ENDPOINT: BUSCAR TRABAJADORES DISPONIBLES
+# ================================================================
+@app.route('/api/search-available-workers', methods=['GET'])
+def search_available_workers():
+    """Busca trabajadores que estén disponibles"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        # Parámetros opcionales
+        day = request.args.get('day')  # Día específico (monday, tuesday, etc.)
+        date = request.args.get('date')  # Fecha específica
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        query = """
+            SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.telefono, u.url_foto,
+                   d.disponible, d.dias_disponibles, d.hora_inicio, d.hora_fin
+            FROM usuarios u
+            INNER JOIN disponibilidad_trabajador d ON u.id_usuario = d.id_usuario
+            WHERE u.rol = 'Trabajador' AND d.disponible = TRUE
+        """
+        
+        cursor.execute(query)
+        workers = cursor.fetchall()
+        
+        # Filtrar por día o fecha si se especifica
+        available_workers = []
+        for worker in workers:
+            dias = json.loads(worker['dias_disponibles']) if worker['dias_disponibles'] else []
+            
+            # Si se especifica un día, verificar que esté en los días disponibles
+            if day and day not in dias:
+                continue
+            
+            worker['dias_disponibles'] = dias
+            worker['hora_inicio'] = str(worker['hora_inicio']) if worker['hora_inicio'] else None
+            worker['hora_fin'] = str(worker['hora_fin']) if worker['hora_fin'] else None
+            
+            available_workers.append(worker)
+        
+        cursor.close()
+        conexion.close()
+        
+        return jsonify({
+            'success': True,
+            'workers': available_workers,
+            'total': len(available_workers)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error buscando trabajadores disponibles: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+print("✅ Nuevos endpoints cargados:")
+print("   - POST /api/update-language")
+print("   - POST /api/update-availability")
+print("   - GET  /api/get-availability")
+print("   - GET  /api/get-user-settings (actualizado)")
+print("   - GET  /api/search-available-workers")
+
+# ENDPOINT 1: ACTUALIZAR IDIOMA (nombre único)
+@app.route('/api/actualizar-idioma-usuario', methods=['POST'])
+def actualizar_idioma_usuario():
+    """Actualiza el idioma del usuario en la base de datos"""
+    try:
+        # Verificar autenticación
+        if 'user_id' not in session:
+            return jsonify({
+                'success': False, 
+                'message': 'No autenticado'
+            }), 401
+        
+        # Obtener datos
+        data = request.get_json()
+        language = data.get('language', 'es')
+        user_id = session['user_id']
+        
+        # Validar idioma
+        valid_languages = ['es', 'en', 'zh']
+        if language not in valid_languages:
+            language = 'es'
+        
+        # Conectar a la base de datos
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="Agromach_V2"  # Nombre correcto de tu base de datos
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        # Verificar si existe la columna Idioma
+        cursor.execute("""
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = 'Agromach_V2' 
+            AND TABLE_NAME = 'Usuario' 
+            AND COLUMN_NAME = 'Idioma'
+        """)
+        column_exists = cursor.fetchone()
+        
+        # Si no existe la columna, crearla
+        if not column_exists:
+            print("⚠️ Columna 'Idioma' no existe, creándola...")
+            cursor.execute("""
+                ALTER TABLE Usuario 
+                ADD COLUMN Idioma VARCHAR(5) DEFAULT 'es' 
+                AFTER Red_Social
+            """)
+            conexion.commit()
+            print("✅ Columna 'Idioma' creada exitosamente")
+        
+        # Actualizar el idioma del usuario
+        query = """
+            UPDATE Usuario 
+            SET Idioma = %s 
+            WHERE ID_Usuario = %s
+        """
+        cursor.execute(query, (language, user_id))
+        conexion.commit()
+        
+        # Verificar que se actualizó
+        rows_affected = cursor.rowcount
+        
+        # Guardar en sesión
+        session['user_language'] = language
+        
+        cursor.close()
+        conexion.close()
+        
+        print(f"✅ Idioma actualizado exitosamente:")
+        print(f"   - Usuario ID: {user_id}")
+        print(f"   - Nuevo idioma: {language}")
+        print(f"   - Filas afectadas: {rows_affected}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Idioma actualizado correctamente',
+            'language': language,
+            'user_id': user_id
+        })
+        
+    except mysql.connector.Error as db_error:
+        print(f"❌ Error de base de datos: {str(db_error)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error de base de datos: {str(db_error)}'
+        }), 500
+        
+    except Exception as e:
+        print(f"❌ Error general: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ENDPOINT 2: ACTUALIZAR DISPONIBILIDAD (nombre único)
+@app.route('/api/actualizar-disponibilidad-trabajador', methods=['POST'])
+def actualizar_disponibilidad_trabajador():
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        data = request.get_json()
+        user_id = session['user_id']
+        
+        available = data.get('available', False)
+        visibility = data.get('visibility', 'visible')
+        days = data.get('days', [])
+        start_time = data.get('startTime', '08:00')
+        end_time = data.get('endTime', '18:00')
+        unavailable_dates = data.get('unavailableDates', [])
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        days_json = json.dumps(days)
+        unavailable_dates_json = json.dumps(unavailable_dates)
+        
+        valid_visibility = ['visible', 'paused', 'hidden']
+        if visibility not in valid_visibility:
+            visibility = 'visible'
+        
+        cursor.execute("SELECT ID_Disponibilidad FROM disponibilidad_trabajador WHERE ID_Usuario = %s", (user_id,))
+        existing = cursor.fetchone()
+        
+        if existing:
+            query = """
+                UPDATE disponibilidad_trabajador 
+                SET Disponible = %s,
+                    Visibilidad = %s,
+                    Dias_Disponibles = %s, 
+                    Hora_Inicio = %s, 
+                    Hora_Fin = %s, 
+                    Fechas_No_Disponibles = %s
+                WHERE ID_Usuario = %s
+            """
+            cursor.execute(query, (available, visibility, days_json, start_time, end_time, unavailable_dates_json, user_id))
+        else:
+            query = """
+                INSERT INTO disponibilidad_trabajador 
+                (ID_Usuario, Disponible, Visibilidad, Dias_Disponibles, Hora_Inicio, Hora_Fin, Fechas_No_Disponibles)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query, (user_id, available, visibility, days_json, start_time, end_time, unavailable_dates_json))
+        
+        conexion.commit()
+        cursor.close()
+        conexion.close()
+        
+        print(f"✅ Disponibilidad actualizada para usuario ID: {user_id}")
+        
+        return jsonify({'success': True, 'message': 'Disponibilidad actualizada correctamente'})
+        
+    except Exception as e:
+        print(f"❌ Error actualizando disponibilidad: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+# ENDPOINT 3: OBTENER DISPONIBILIDAD (nombre único)
+@app.route('/api/obtener-disponibilidad-trabajador', methods=['GET'])
+def obtener_disponibilidad_trabajador():
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        user_id = session['user_id']
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        query = """
+            SELECT Disponible, Visibilidad, Dias_Disponibles, Hora_Inicio, Hora_Fin, 
+                   Fechas_No_Disponibles, Fecha_Actualizacion
+            FROM disponibilidad_trabajador
+            WHERE ID_Usuario = %s
+        """
+        cursor.execute(query, (user_id,))
+        availability = cursor.fetchone()
+        
+        cursor.close()
+        conexion.close()
+        
+        if availability:
+            availability['Dias_Disponibles'] = json.loads(availability['Dias_Disponibles']) if availability['Dias_Disponibles'] else []
+            availability['Fechas_No_Disponibles'] = json.loads(availability['Fechas_No_Disponibles']) if availability['Fechas_No_Disponibles'] else []
+            
+            if availability['Hora_Inicio']:
+                availability['Hora_Inicio'] = str(availability['Hora_Inicio'])
+            if availability['Hora_Fin']:
+                availability['Hora_Fin'] = str(availability['Hora_Fin'])
+            if availability['Fecha_Actualizacion']:
+                availability['Fecha_Actualizacion'] = availability['Fecha_Actualizacion'].isoformat()
+            
+            return jsonify({'success': True, 'availability': availability})
+        else:
+            return jsonify({'success': True, 'availability': None})
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo disponibilidad: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+# ENDPOINT 4: OBTENER CONFIGURACIONES (nombre único)
+@app.route('/api/obtener-configuraciones-usuario', methods=['GET'])
+def obtener_configuraciones_usuario():
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        user_id = session['user_id']
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        cursor.execute("SELECT Idioma FROM Usuario WHERE ID_Usuario = %s", (user_id,))
+        user_data = cursor.fetchone()
+        language = user_data.get('Idioma', 'es') if user_data else 'es'
+        
+        cursor.execute("""
+            SELECT Disponible, Visibilidad, Dias_Disponibles, Hora_Inicio, Hora_Fin, 
+                   Fechas_No_Disponibles
+            FROM disponibilidad_trabajador
+            WHERE ID_Usuario = %s
+        """, (user_id,))
+        availability = cursor.fetchone()
+        
+        cursor.close()
+        conexion.close()
+        
+        settings = {
+            'language': language,
+            'availability': None,
+            'notifications': {
+                'emailNotifications': True,
+                'emailUpdates': True
+            }
+        }
+        
+        if availability:
+            settings['availability'] = {
+                'available': availability['Disponible'],
+                'visibility': availability['Visibilidad'],
+                'days': json.loads(availability['Dias_Disponibles']) if availability['Dias_Disponibles'] else [],
+                'startTime': str(availability['Hora_Inicio']) if availability['Hora_Inicio'] else '08:00',
+                'endTime': str(availability['Hora_Fin']) if availability['Hora_Fin'] else '18:00',
+                'unavailableDates': json.loads(availability['Fechas_No_Disponibles']) if availability['Fechas_No_Disponibles'] else []
+            }
+        
+        return jsonify({'success': True, 'settings': settings})
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo configuraciones: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+# ENDPOINT 5: BUSCAR TRABAJADORES DISPONIBLES (nombre único)
+@app.route('/api/buscar-trabajadores-disponibles', methods=['GET'])
+def buscar_trabajadores_disponibles():
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        day = request.args.get('day')
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="agromatch"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        query = """
+            SELECT u.ID_Usuario, u.Nombre, u.Apellido, u.Correo, u.Telefono, u.URL_Foto,
+                   d.Disponible, d.Visibilidad, d.Dias_Disponibles, d.Hora_Inicio, d.Hora_Fin
+            FROM Usuario u
+            INNER JOIN disponibilidad_trabajador d ON u.ID_Usuario = d.ID_Usuario
+            WHERE u.Rol = 'Trabajador' 
+            AND d.Disponible = TRUE 
+            AND d.Visibilidad = 'visible'
+        """
+        
+        cursor.execute(query)
+        workers = cursor.fetchall()
+        
+        available_workers = []
+        for worker in workers:
+            dias = json.loads(worker['Dias_Disponibles']) if worker['Dias_Disponibles'] else []
+            
+            if day and day not in dias:
+                continue
+            
+            worker['Dias_Disponibles'] = dias
+            worker['Hora_Inicio'] = str(worker['Hora_Inicio']) if worker['Hora_Inicio'] else None
+            worker['Hora_Fin'] = str(worker['Hora_Fin']) if worker['Hora_Fin'] else None
+            
+            available_workers.append(worker)
+        
+        cursor.close()
+        conexion.close()
+        
+        return jsonify({
+            'success': True,
+            'workers': available_workers,
+            'total': len(available_workers)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error buscando trabajadores: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+
+print("✅ 5 Endpoints sin conflictos cargados")
+
+# ================================================================
+# ENDPOINT: OBTENER SESIÓN DE USUARIO (ACTUALIZADO CON IDIOMA)
+# ================================================================
+
+@app.route('/get_user_session', methods=['GET'])
+def get_user_session_with_language():
+    """Obtiene la información del usuario incluyendo el idioma"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({
+                'success': False,
+                'message': 'No hay sesión activa'
+            }), 401
+        
+        user_id = session['user_id']
+        
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="Agromach_V2"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        # Obtener información del usuario incluyendo idioma
+        query = """
+            SELECT 
+                ID_Usuario,
+                Nombre,
+                Apellido,
+                Correo,
+                Telefono,
+                URL_Foto,
+                Red_Social,
+                Rol,
+                Estado,
+                Idioma,
+                Fecha_Registro
+            FROM Usuario
+            WHERE ID_Usuario = %s
+        """
+        cursor.execute(query, (user_id,))
+        user = cursor.fetchone()
+        
+        cursor.close()
+        conexion.close()
+        
+        if user:
+            # Formatear datos del usuario
+            user_data = {
+                'id': user['ID_Usuario'],
+                'first_name': user['Nombre'],
+                'last_name': user['Apellido'],
+                'full_name': f"{user['Nombre']} {user['Apellido']}",
+                'email': user['Correo'],
+                'telefono': user['Telefono'],
+                'url_foto': user['URL_Foto'],
+                'red_social': user['Red_Social'],
+                'role': user['Rol'],
+                'estado': user['Estado'],
+                'language': user.get('Idioma', 'es') or 'es',  # Default a 'es' si es NULL
+                'fecha_registro': user['Fecha_Registro'].isoformat() if user['Fecha_Registro'] else None
+            }
+            
+            return jsonify({
+                'success': True,
+                'user': user_data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Usuario no encontrado'
+            }), 404
+            
+    except Exception as e:
+        print(f"❌ Error obteniendo sesión: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# SCRIPT PARA VERIFICAR/CREAR LA COLUMNA IDIOMA
+# ================================================================
+
+def verificar_columna_idioma():
+    """Verifica y crea la columna Idioma si no existe"""
+    try:
+        conexion = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="Agromach_V2"
+        )
+        cursor = conexion.cursor(dictionary=True)
+        
+        # Verificar si existe la columna
+        cursor.execute("""
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = 'Agromach_V2' 
+            AND TABLE_NAME = 'Usuario' 
+            AND COLUMN_NAME = 'Idioma'
+        """)
+        exists = cursor.fetchone()
+        
+        if not exists:
+            print("⚠️ Columna 'Idioma' no existe. Creándola...")
+            cursor.execute("""
+                ALTER TABLE Usuario 
+                ADD COLUMN Idioma VARCHAR(5) DEFAULT 'es' 
+                AFTER Red_Social
+            """)
+            conexion.commit()
+            print("✅ Columna 'Idioma' creada exitosamente")
+        else:
+            print("✅ Columna 'Idioma' ya existe")
+        
+        cursor.close()
+        conexion.close()
+        
+    except Exception as e:
+        print(f"❌ Error verificando columna: {str(e)}")
+
+# Ejecutar verificación al iniciar la aplicación
+verificar_columna_idioma()
+
+print("✅ Endpoints de idioma cargados correctamente:")
+print("   - POST /api/actualizar-idioma-usuario")
+print("   - GET  /get_user_session (actualizado con idioma)")
+
+
+# ================================================================
+# AGREGAR ESTOS ENDPOINTS AL FINAL DE TU app.py (ANTES DEL if __name__)
+# ================================================================
+
+from math import radians, cos, sin, asin, sqrt
+
+def calcular_distancia(lat1, lon1, lat2, lon2):
+    """
+    Calcula la distancia en kilómetros entre dos puntos usando la fórmula de Haversine
+    """
+    # Convertir grados a radianes
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    
+    # Fórmula de Haversine
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371  # Radio de la Tierra en kilómetros
+    
+    return c * r
+
+# ================================================================
+# ENDPOINT 1: Obtener ofertas cercanas con ubicación para TRABAJADORES
+# ================================================================
+@app.route('/api/get_nearby_jobs', methods=['POST'])
+@require_login
+def get_nearby_jobs():
+    """Obtener ofertas de trabajo cercanas según la ubicación del trabajador"""
+    try:
+        user_id = session['user_id']
+        user_role = session.get('user_role')
+        
+        if user_role != 'Trabajador':
+            return jsonify({'success': False, 'error': 'Solo trabajadores'}), 403
+        
+        data = request.get_json()
+        user_lat = data.get('latitude')
+        user_lon = data.get('longitude')
+        radio_km = data.get('radius', 50)  # Radio por defecto: 50km
+        
+        if not user_lat or not user_lon:
+            return jsonify({'success': False, 'error': 'Ubicación requerida'}), 400
+        
+        # Obtener ofertas activas con ubicación del predio
+        ofertas = execute_query("""
+            SELECT 
+                ot.ID_Oferta,
+                ot.Titulo,
+                ot.Descripcion,
+                ot.Pago_Ofrecido,
+                ot.Fecha_Publicacion,
+                ot.Estado,
+                CONCAT(u.Nombre, ' ', u.Apellido) as Agricultor,
+                u.ID_Usuario as ID_Agricultor,
+                pr.Ubicacion_Latitud,
+                pr.Ubicacion_Longitud,
+                pr.Nombre_Finca
+            FROM Oferta_Trabajo ot
+            INNER JOIN Usuario u ON ot.ID_Agricultor = u.ID_Usuario
+            LEFT JOIN Predio pr ON u.ID_Usuario = pr.ID_Usuario
+            WHERE ot.Estado = 'Abierta'
+              AND ot.ID_Agricultor != %s
+              AND pr.Ubicacion_Latitud IS NOT NULL
+              AND pr.Ubicacion_Longitud IS NOT NULL
+            ORDER BY ot.Fecha_Publicacion DESC
+        """, (user_id,))
+        
+        # Filtrar por distancia y agregar datos
+        ofertas_cercanas = []
+        for oferta in ofertas:
+            if oferta['Ubicacion_Latitud'] and oferta['Ubicacion_Longitud']:
+                distancia = calcular_distancia(
+                    float(user_lat), float(user_lon),
+                    float(oferta['Ubicacion_Latitud']), 
+                    float(oferta['Ubicacion_Longitud'])
+                )
+                
+                if distancia <= radio_km:
+                    ofertas_cercanas.append({
+                        'id': oferta['ID_Oferta'],
+                        'titulo': oferta['Titulo'],
+                        'descripcion': oferta['Descripcion'][:150] + '...' if len(oferta['Descripcion']) > 150 else oferta['Descripcion'],
+                        'pago': float(oferta['Pago_Ofrecido']),
+                        'agricultor': oferta['Agricultor'],
+                        'id_agricultor': oferta['ID_Agricultor'],
+                        'ubicacion': oferta['Nombre_Finca'],
+                        'lat': float(oferta['Ubicacion_Latitud']),
+                        'lng': float(oferta['Ubicacion_Longitud']),
+                        'distancia': round(distancia, 2),
+                        'fecha': oferta['Fecha_Publicacion'].isoformat() if oferta['Fecha_Publicacion'] else None
+                    })
+        
+        # Ordenar por distancia
+        ofertas_cercanas.sort(key=lambda x: x['distancia'])
+        
+        return jsonify({
+            'success': True,
+            'ofertas': ofertas_cercanas,
+            'total': len(ofertas_cercanas),
+            'user_location': {
+                'lat': float(user_lat),
+                'lng': float(user_lon)
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error obteniendo ofertas cercanas: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ================================================================
+# ENDPOINT 2: Obtener trabajadores cercanos para AGRICULTORES
+# ================================================================
+@app.route('/api/get_nearby_workers', methods=['POST'])
+@require_login
+def get_nearby_workers():
+    """Obtener trabajadores disponibles cercanos según la ubicación del agricultor"""
+    try:
+        user_id = session['user_id']
+        user_role = session.get('user_role')
+        
+        if user_role != 'Agricultor':
+            return jsonify({'success': False, 'error': 'Solo agricultores'}), 403
+        
+        data = request.get_json()
+        user_lat = data.get('latitude')
+        user_lon = data.get('longitude')
+        radio_km = data.get('radius', 50)
+        
+        if not user_lat or not user_lon:
+            return jsonify({'success': False, 'error': 'Ubicación requerida'}), 400
+        
+        # Obtener trabajadores con su última ubicación registrada
+        # (Nota: necesitas almacenar la ubicación del trabajador en alguna tabla)
+        trabajadores = execute_query("""
+            SELECT 
+                u.ID_Usuario,
+                u.Nombre,
+                u.Apellido,
+                u.Telefono,
+                u.URL_Foto,
+                COUNT(DISTINCT al.ID_Acuerdo) as trabajos_completados,
+                AVG(CAST(c.Puntuacion AS DECIMAL)) as calificacion_promedio,
+                GROUP_CONCAT(DISTINCT h.Nombre SEPARATOR ', ') as habilidades,
+                -- Aquí necesitamos obtener la ubicación del trabajador
+                -- Por ahora usaremos ubicaciones aleatorias cerca de Bogotá
+                4.7110 + (RAND() * 0.2 - 0.1) as Latitud,
+                -74.0721 + (RAND() * 0.2 - 0.1) as Longitud
+            FROM Usuario u
+            LEFT JOIN Acuerdo_Laboral al ON u.ID_Usuario = al.ID_Trabajador AND al.Estado = 'Finalizado'
+            LEFT JOIN Calificacion c ON u.ID_Usuario = c.ID_Usuario_Receptor
+            LEFT JOIN Habilidad h ON u.ID_Usuario = h.ID_Trabajador
+            WHERE u.Rol = 'Trabajador'
+              AND u.Estado = 'Activo'
+              AND u.ID_Usuario != %s
+            GROUP BY u.ID_Usuario, u.Nombre, u.Apellido, u.Telefono, u.URL_Foto
+            LIMIT 50
+        """, (user_id,))
+        
+        # Filtrar por distancia
+        trabajadores_cercanos = []
+        for trabajador in trabajadores:
+            distancia = calcular_distancia(
+                float(user_lat), float(user_lon),
+                float(trabajador['Latitud']), 
+                float(trabajador['Longitud'])
+            )
+            
+            if distancia <= radio_km:
+                trabajadores_cercanos.append({
+                    'id': trabajador['ID_Usuario'],
+                    'nombre': f"{trabajador['Nombre']} {trabajador['Apellido']}",
+                    'telefono': trabajador.get('Telefono', ''),
+                    'foto': trabajador.get('URL_Foto'),
+                    'trabajos': trabajador['trabajos_completados'] or 0,
+                    'calificacion': float(trabajador['calificacion_promedio']) if trabajador['calificacion_promedio'] else 0,
+                    'habilidades': trabajador['habilidades'].split(', ') if trabajador['habilidades'] else [],
+                    'lat': float(trabajador['Latitud']),
+                    'lng': float(trabajador['Longitud']),
+                    'distancia': round(distancia, 2)
+                })
+        
+        # Ordenar por calificación y distancia
+        trabajadores_cercanos.sort(key=lambda x: (-x['calificacion'], x['distancia']))
+        
+        return jsonify({
+            'success': True,
+            'trabajadores': trabajadores_cercanos,
+            'total': len(trabajadores_cercanos),
+            'user_location': {
+                'lat': float(user_lat),
+                'lng': float(user_lon)
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error obteniendo trabajadores cercanos: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ================================================================
+# ENDPOINT 3: Guardar ubicación del usuario
+# ================================================================
+@app.route('/api/save_user_location', methods=['POST'])
+@require_login
+def save_user_location():
+    """Guardar la ubicación actual del usuario"""
+    try:
+        user_id = session['user_id']
+        data = request.get_json()
+        
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        
+        if not latitude or not longitude:
+            return jsonify({'success': False, 'error': 'Ubicación requerida'}), 400
+        
+        # Guardar en tabla Predio si es agricultor
+        user_role = session.get('user_role')
+        
+        if user_role == 'Agricultor':
+            # Verificar si tiene predio
+            predio = execute_query("""
+                SELECT ID_Predio FROM Predio WHERE ID_Usuario = %s LIMIT 1
+            """, (user_id,), fetch_one=True)
+            
+            if predio:
+                # Actualizar predio existente
+                execute_query("""
+                    UPDATE Predio 
+                    SET Ubicacion_Latitud = %s, Ubicacion_Longitud = %s
+                    WHERE ID_Predio = %s
+                """, (latitude, longitude, predio['ID_Predio']))
+            else:
+                # Crear nuevo predio
+                execute_query("""
+                    INSERT INTO Predio (ID_Usuario, Nombre_Finca, Ubicacion_Latitud, Ubicacion_Longitud, Descripcion)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (user_id, 'Mi Finca', latitude, longitude, 'Ubicación registrada automáticamente'))
+        
+        # Para trabajadores, podrías crear una tabla separada para ubicaciones
+        # O usar la tabla Configuraciones en formato JSON
+        
+        return jsonify({
+            'success': True,
+            'message': 'Ubicación guardada correctamente'
+        })
+        
+    except Exception as e:
+        print(f"Error guardando ubicación: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ================================================================
+# ENDPOINT 4: Obtener ubicación del predio del agricultor
+# ================================================================
+@app.route('/api/get_user_location', methods=['GET'])
+@require_login
+def get_user_location():
+    """Obtener la ubicación guardada del usuario"""
+    try:
+        user_id = session['user_id']
+        user_role = session.get('user_role')
+        
+        if user_role == 'Agricultor':
+            # Obtener del predio
+            predio = execute_query("""
+                SELECT Ubicacion_Latitud, Ubicacion_Longitud, Nombre_Finca
+                FROM Predio 
+                WHERE ID_Usuario = %s 
+                LIMIT 1
+            """, (user_id,), fetch_one=True)
+            
+            if predio and predio['Ubicacion_Latitud'] and predio['Ubicacion_Longitud']:
+                return jsonify({
+                    'success': True,
+                    'location': {
+                        'lat': float(predio['Ubicacion_Latitud']),
+                        'lng': float(predio['Ubicacion_Longitud']),
+                        'nombre': predio['Nombre_Finca']
+                    }
+                })
+        
+        # Si no hay ubicación guardada, devolver ubicación por defecto (Bogotá)
+        return jsonify({
+            'success': True,
+            'location': {
+                'lat': 4.7110,
+                'lng': -74.0721,
+                'nombre': 'Ubicación no configurada'
+            },
+            'is_default': True
+        })
+        
+    except Exception as e:
+        print(f"Error obteniendo ubicación: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+print("✅ Endpoints de geolocalización cargados correctamente")
+print("📋 APIs disponibles:")
+print("   • POST /api/get_nearby_jobs        - Ofertas cercanas (trabajador)")
+print("   • POST /api/get_nearby_workers     - Trabajadores cercanos (agricultor)")
+print("   • POST /api/save_user_location     - Guardar ubicación")
+print("   • GET  /api/get_user_location      - Obtener ubicación guardada")
+
+
+# Configuración
+GMAIL_USER = 'agromatch2025@gmail.com'
+GMAIL_APP_PASSWORD = 'wfme fcns ubgw viju'
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+password_reset_tokens = {}
+
+def send_email(to_email, subject, html_content):
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['From'] = f'AgroMatch <{GMAIL_USER}>'
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_content, 'html'))
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.send_message(msg)
+        
+        print(f"✅ Email enviado a {to_email}")
+        return True
+    except Exception as e:
+        print(f"❌ Error enviando email: {str(e)}")
+        return False
+
+def get_password_reset_email_template(user_name, reset_link):
+    return f"""
+    <html><body style="font-family: Arial, sans-serif; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+        <div style="background: linear-gradient(135deg, #4a7c59 0%, #2d5a27 100%); padding: 40px; text-align: center;">
+            <h1 style="margin: 0; color: white; font-size: 28px;">🌱 AgroMatch</h1>
+            <p style="margin: 10px 0 0; color: #90EE90; font-size: 16px;">Recuperación de Contraseña</p>
+        </div>
+        <div style="padding: 40px;">
+            <h2 style="color: #1e3a2e; font-size: 24px;">Hola {user_name},</h2>
+            <p style="color: #64748b; font-size: 16px; line-height: 1.6;">
+                Recibimos una solicitud para restablecer tu contraseña en AgroMatch.
+            </p>
+            <div style="text-align: center; padding: 20px 0;">
+                <a href="{reset_link}" style="display: inline-block; background: linear-gradient(135deg, #4a7c59 0%, #2d5a27 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 16px; font-weight: 600;">
+                    Restablecer Contraseña
+                </a>
+            </div>
+            <p style="color: #64748b; font-size: 14px;">O copia este enlace: {reset_link}</p>
+            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; color: #856404; font-size: 14px;">⚠️ Este enlace expirará en 30 minutos</p>
+            </div>
+        </div>
+    </div>
+    </body></html>
+    """
+
+@app.route('/api/request-password-reset', methods=['POST'])
+def request_password_reset():
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'success': False, 'message': 'Email requerido'}), 400
+        
+        user = execute_query(
+            "SELECT ID_Usuario, Nombre, Apellido, Correo, Estado FROM Usuario WHERE Correo = %s",
+            (email,), fetch_one=True
+        )
+        
+        if not user or user['Estado'] != 'Activo':
+            return jsonify({
+                'success': True,
+                'message': 'Si el correo existe, recibirás un enlace'
+            })
+        
+        reset_token = secrets.token_urlsafe(32)
+        expiration_time = datetime.now() + timedelta(minutes=30)
+        
+        password_reset_tokens[reset_token] = {
+            'user_id': user['ID_Usuario'],
+            'email': email,
+            'expires_at': expiration_time,
+            'used': False
+        }
+        
+        reset_link = f"http://localhost:5000/reset-password?token={reset_token}"
+        user_name = f"{user['Nombre']} {user['Apellido']}"
+        email_html = get_password_reset_email_template(user_name, reset_link)
+        
+        send_email(email, '🔐 Recuperación de Contraseña - AgroMatch', email_html)
+        
+        print(f"✅ Token: {reset_token}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Te hemos enviado un correo con instrucciones'
+        })
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error interno'}), 500
+
+@app.route('/reset-password', methods=['GET'])
+def reset_password_page():
+    token = request.args.get('token')
+    
+    if not token or token not in password_reset_tokens:
+        return redirect('/vista/login-trabajador.html?message=Token inválido&type=error')
+    
+    token_data = password_reset_tokens[token]
+    
+    if datetime.now() > token_data['expires_at'] or token_data['used']:
+        return redirect('/vista/login-trabajador.html?message=Token expirado&type=error')
+    
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Restablecer Contraseña</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#1e3a2e 0%,#2d5a27 35%,#4a7c59 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}}
+.container{{background:white;padding:50px;border-radius:20px;box-shadow:0 15px 50px rgba(0,0,0,0.2);max-width:500px;width:100%}}
+.header{{text-align:center;margin-bottom:40px}}
+.header i{{font-size:4rem;color:#4a7c59;margin-bottom:20px}}
+.header h1{{color:#1e3a2e;font-size:2rem;margin-bottom:10px}}
+.form-group{{margin-bottom:25px}}
+.form-group label{{display:block;color:#1e3a2e;font-weight:600;margin-bottom:10px}}
+.input-container{{position:relative}}
+.input-container input{{width:100%;padding:15px 15px 15px 45px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem}}
+.input-container input:focus{{outline:none;border-color:#4a7c59;box-shadow:0 0 0 4px rgba(74,124,89,0.1)}}
+.input-icon{{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#64748b}}
+.toggle-password{{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:#64748b;cursor:pointer}}
+.btn-submit{{width:100%;padding:16px;background:linear-gradient(135deg,#4a7c59 0%,#2d5a27 100%);color:white;border:none;border-radius:10px;font-size:1.1rem;font-weight:600;cursor:pointer;margin-top:30px}}
+.btn-submit:hover{{transform:translateY(-2px);box-shadow:0 8px 20px rgba(74,124,89,0.3)}}
+.btn-submit:disabled{{background:#94a3b8;cursor:not-allowed}}
+.alert{{padding:15px;border-radius:10px;margin-bottom:20px;display:none}}
+.alert-error{{background:#fee;color:#c00}}
+.alert-success{{background:#efe;color:#060}}
+.requirements{{background:#f8f9fa;border:1px solid #e2e8f0;border-radius:10px;padding:15px;margin-top:20px}}
+.requirement{{display:flex;align-items:center;gap:10px;color:#64748b;font-size:0.85rem;margin-bottom:5px}}
+.requirement.valid{{color:#22c55e}}
+</style></head><body>
+<div class="container">
+<div class="header"><i class="fas fa-key"></i><h1>Restablecer Contraseña</h1><p>Ingresa tu nueva contraseña</p></div>
+<div id="alert" class="alert"></div>
+<form id="resetForm">
+<input type="hidden" id="token" value="{token}">
+<div class="form-group"><label>Nueva Contraseña</label>
+<div class="input-container">
+<i class="fas fa-lock input-icon"></i>
+<input type="password" id="new_password" required>
+<i class="fas fa-eye toggle-password" onclick="togglePwd('new_password')"></i>
+</div></div>
+<div class="form-group"><label>Confirmar Contraseña</label>
+<div class="input-container">
+<i class="fas fa-lock input-icon"></i>
+<input type="password" id="confirm_password" required>
+<i class="fas fa-eye toggle-password" onclick="togglePwd('confirm_password')"></i>
+</div></div>
+<div class="requirements"><h4>Requisitos:</h4>
+<div class="requirement" id="req-length"><i class="fas fa-circle"></i><span>Mínimo 8 caracteres</span></div>
+<div class="requirement" id="req-upper"><i class="fas fa-circle"></i><span>Una mayúscula</span></div>
+<div class="requirement" id="req-lower"><i class="fas fa-circle"></i><span>Una minúscula</span></div>
+<div class="requirement" id="req-number"><i class="fas fa-circle"></i><span>Un número</span></div>
+</div>
+<button type="submit" class="btn-submit" id="submitBtn">Restablecer Contraseña</button>
+</form></div>
+<script>
+function togglePwd(id){{const input=document.getElementById(id);const icon=input.nextElementSibling;if(input.type==='password'){{input.type='text';icon.classList.remove('fa-eye');icon.classList.add('fa-eye-slash')}}else{{input.type='password';icon.classList.remove('fa-eye-slash');icon.classList.add('fa-eye')}}}}
+function showAlert(msg,type){{const alert=document.getElementById('alert');alert.textContent=msg;alert.className=`alert alert-${{type}}`;alert.style.display='block'}}
+function validatePassword(pwd){{const reqs={{length:pwd.length>=8,upper:/[A-Z]/.test(pwd),lower:/[a-z]/.test(pwd),number:/[0-9]/.test(pwd)}};document.getElementById('req-length').classList.toggle('valid',reqs.length);document.getElementById('req-upper').classList.toggle('valid',reqs.upper);document.getElementById('req-lower').classList.toggle('valid',reqs.lower);document.getElementById('req-number').classList.toggle('valid',reqs.number);return Object.values(reqs).every(v=>v)}}
+document.getElementById('new_password').addEventListener('input',function(){{validatePassword(this.value)}});
+document.getElementById('resetForm').addEventListener('submit',async function(e){{e.preventDefault();const newPwd=document.getElementById('new_password').value;const confirmPwd=document.getElementById('confirm_password').value;const btn=document.getElementById('submitBtn');if(!validatePassword(newPwd)){{showAlert('La contraseña no cumple los requisitos','error');return}}if(newPwd!==confirmPwd){{showAlert('Las contraseñas no coinciden','error');return}}btn.disabled=true;btn.innerHTML='Procesando...';try{{const response=await fetch('/api/reset-password',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{token:document.getElementById('token').value,new_password:newPwd}})}});const data=await response.json();if(data.success){{showAlert('¡Contraseña actualizada! Redirigiendo...','success');setTimeout(()=>{{window.location.href='/vista/login-trabajador.html?message=Contraseña actualizada correctamente&type=success'}},2000)}}else{{showAlert(data.message,'error');btn.disabled=false;btn.innerHTML='Restablecer Contraseña'}}}}catch(error){{showAlert('Error de conexión','error');btn.disabled=false;btn.innerHTML='Restablecer Contraseña'}}}});
+</script></body></html>"""
+
+@app.route('/api/reset-password', methods=['POST'])
+def process_password_reset():
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        new_password = data.get('new_password')
+        
+        if not token or not new_password or len(new_password) < 8:
+            return jsonify({'success': False, 'message': 'Datos inválidos'}), 400
+        
+        token_data = password_reset_tokens.get(token)
+        
+        if not token_data or datetime.now() > token_data['expires_at'] or token_data['used']:
+            return jsonify({'success': False, 'message': 'Token inválido'}), 400
+        
+        hashed_password = hash_password(new_password)
+        execute_query("UPDATE Usuario SET Contrasena = %s WHERE ID_Usuario = %s",
+                     (hashed_password, token_data['user_id']))
+        
+        token_data['used'] = True
+        print(f"✅ Contraseña actualizada para usuario {token_data['user_id']}")
+        
+        return jsonify({'success': True, 'message': 'Contraseña actualizada'})
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error interno'}), 500
+
+print("✅ Sistema de recuperación cargado")
+
+# ================================================================
+# CONFIGURACIÓN DE FLASK-MAIL (Gmail)
+# ================================================================
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'agromatch2025@gmail.com'
+app.config['MAIL_PASSWORD'] = 'wfme fcns ubgw viju'  # Contraseña de aplicación
+app.config['MAIL_DEFAULT_SENDER'] = 'agromatch2025@gmail.com'
+
+# Inicializar Flask-Mail
+mail = Mail(app)
+
+print("✅ Flask-Mail configurado correctamente")
+print(f"   📧 Email: {app.config['MAIL_USERNAME']}")
+
+# ================================================================
+# SISTEMA DE REPORTES - BACKEND COMPLETO
+# AGREGAR AL FINAL DE app.py (ANTES DE if __name__ == '__main__':)
+# ================================================================
+
+# ================================================================
+# API PARA REPORTAR USUARIO - ÚNICA VERSIÓN
+# ================================================================
+@app.route('/api/reportar-usuario-v2', methods=['POST'])
+def reportar_usuario_v2():
+    """Endpoint para que un usuario reporte a otro - VERSIÓN MEJORADA"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({
+                'success': False, 
+                'message': 'Debes iniciar sesión para reportar'
+            }), 401
+        
+        data = request.get_json()
+        
+        if not data.get('usuario_reportado') or not data.get('motivo'):
+            return jsonify({
+                'success': False,
+                'message': 'Datos incompletos. Se requiere usuario y motivo'
+            }), 400
+        
+        usuario_reportante = session['user_id']
+        usuario_reportado = data['usuario_reportado']
+        motivo = data['motivo'].strip()
+        
+        if len(motivo) < 10:
+            return jsonify({
+                'success': False,
+                'message': 'El motivo debe tener al menos 10 caracteres'
+            }), 400
+        
+        usuario_existe = execute_query("""
+            SELECT ID_Usuario, Nombre, Apellido, Correo, Rol 
+            FROM Usuario 
+            WHERE ID_Usuario = %s
+        """, (usuario_reportado,), fetch_one=True)
+        
+        if not usuario_existe:
+            return jsonify({
+                'success': False,
+                'message': 'Usuario reportado no encontrado'
+            }), 404
+        
+        if usuario_reportante == usuario_reportado:
+            return jsonify({
+                'success': False,
+                'message': 'No puedes reportarte a ti mismo'
+            }), 400
+        
+        reporte_existente = execute_query("""
+            SELECT ID_Reporte 
+            FROM Reportes 
+            WHERE ID_Usuario_Reportante = %s 
+              AND ID_Usuario_Reportado = %s 
+              AND Estado = 'Pendiente'
+        """, (usuario_reportante, usuario_reportado), fetch_one=True)
+        
+        if reporte_existente:
+            return jsonify({
+                'success': False,
+                'message': 'Ya tienes un reporte pendiente sobre este usuario'
+            }), 400
+        
+        reportante_info = execute_query("""
+            SELECT Nombre, Apellido, Correo, Rol 
+            FROM Usuario 
+            WHERE ID_Usuario = %s
+        """, (usuario_reportante,), fetch_one=True)
+        
+        reporte_id = execute_query("""
+            INSERT INTO Reportes (
+                ID_Usuario_Reportante, 
+                ID_Usuario_Reportado, 
+                Motivo, 
+                Estado, 
+                Fecha_Reporte
+            )
+            VALUES (%s, %s, %s, 'Pendiente', NOW())
+        """, (usuario_reportante, usuario_reportado, motivo))
+        
+        reporte_data = {
+            'id_reporte': reporte_id,
+            'reportante': {
+                'id': usuario_reportante,
+                'nombre': f"{reportante_info['Nombre']} {reportante_info['Apellido']}",
+                'email': reportante_info['Correo'],
+                'rol': reportante_info['Rol']
+            },
+            'reportado': {
+                'id': usuario_reportado,
+                'nombre': f"{usuario_existe['Nombre']} {usuario_existe['Apellido']}",
+                'email': usuario_existe['Correo'],
+                'rol': usuario_existe['Rol']
+            },
+            'motivo': motivo,
+            'fecha': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        try:
+            enviar_notificacion_reporte_admin(reporte_data)
+        except Exception as email_error:
+            print(f"⚠️ Error enviando email: {email_error}")
+        
+        print(f"📢 NUEVO REPORTE:")
+        print(f"   ID Reporte: {reporte_id}")
+        print(f"   Reportante: {reporte_data['reportante']['nombre']} (ID: {usuario_reportante})")
+        print(f"   Reportado: {reporte_data['reportado']['nombre']} (ID: {usuario_reportado})")
+        print(f"   Motivo: {motivo}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Reporte enviado correctamente. Será revisado por un administrador.',
+            'reporte_id': reporte_id
+        })
+        
+    except Exception as e:
+        print(f"❌ Error creando reporte: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error al procesar el reporte: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# API OBTENER REPORTES PENDIENTES
+# ================================================================
+@app.route('/api/admin/reportes-pendientes', methods=['GET'])
+def get_reportes_pendientes_admin():
+    """Obtener todos los reportes para el administrador"""
+    try:
+        if 'user_id' not in session or session.get('user_role') != 'Administrador':
+            return jsonify({
+                'success': False,
+                'message': 'Acceso denegado. Solo administradores.'
+            }), 403
+        
+        estado_filter = request.args.get('estado', 'Pendiente')
+        
+        reportes = execute_query("""
+            SELECT 
+                r.ID_Reporte,
+                r.Motivo,
+                r.Estado,
+                r.Fecha_Reporte,
+                ur.ID_Usuario as reportante_id,
+                ur.Nombre as reportante_nombre,
+                ur.Apellido as reportante_apellido,
+                ur.Correo as reportante_email,
+                ur.Rol as reportante_rol,
+                ud.ID_Usuario as reportado_id,
+                ud.Nombre as reportado_nombre,
+                ud.Apellido as reportado_apellido,
+                ud.Correo as reportado_email,
+                ud.Rol as reportado_rol,
+                ud.Estado as reportado_estado
+            FROM Reportes r
+            INNER JOIN Usuario ur ON r.ID_Usuario_Reportante = ur.ID_Usuario
+            INNER JOIN Usuario ud ON r.ID_Usuario_Reportado = ud.ID_Usuario
+            WHERE r.Estado = %s
+            ORDER BY r.Fecha_Reporte DESC
+        """, (estado_filter,))
+        
+        reportes_list = []
+        if reportes:
+            for reporte in reportes:
+                fecha_reporte = reporte['Fecha_Reporte']
+                if isinstance(fecha_reporte, str):
+                    fecha_reporte = datetime.strptime(fecha_reporte, '%Y-%m-%d %H:%M:%S')
+                
+                tiempo_transcurrido = datetime.now() - fecha_reporte
+                
+                if tiempo_transcurrido.days > 0:
+                    tiempo_str = f"Hace {tiempo_transcurrido.days} día{'s' if tiempo_transcurrido.days > 1 else ''}"
+                elif tiempo_transcurrido.seconds // 3600 > 0:
+                    horas = tiempo_transcurrido.seconds // 3600
+                    tiempo_str = f"Hace {horas} hora{'s' if horas > 1 else ''}"
+                else:
+                    minutos = tiempo_transcurrido.seconds // 60
+                    tiempo_str = f"Hace {minutos} minuto{'s' if minutos > 1 else ''}"
+                
+                prioridad = 'medium'
+                if tiempo_transcurrido.days > 7:
+                    prioridad = 'high'
+                elif 'fraude' in reporte['Motivo'].lower() or 'estafa' in reporte['Motivo'].lower():
+                    prioridad = 'high'
+                
+                reportes_list.append({
+                    'id_reporte': reporte['ID_Reporte'],
+                    'motivo': reporte['Motivo'],
+                    'estado': reporte['Estado'],
+                    'fecha_reporte': fecha_reporte.strftime('%Y-%m-%d %H:%M:%S'),
+                    'tiempo_transcurrido': tiempo_str,
+                    'prioridad': prioridad,
+                    'reportante': {
+                        'id': reporte['reportante_id'],
+                        'nombre': f"{reporte['reportante_nombre']} {reporte['reportante_apellido']}",
+                        'email': reporte['reportante_email'],
+                        'rol': reporte['reportante_rol']
+                    },
+                    'reportado': {
+                        'id': reporte['reportado_id'],
+                        'nombre': f"{reporte['reportado_nombre']} {reporte['reportado_apellido']}",
+                        'email': reporte['reportado_email'],
+                        'rol': reporte['reportado_rol'],
+                        'estado': reporte['reportado_estado']
+                    }
+                })
+        
+        stats = execute_query("""
+            SELECT 
+                COUNT(*) as total_reportes,
+                COUNT(CASE WHEN Estado = 'Pendiente' THEN 1 END) as pendientes,
+                COUNT(CASE WHEN Estado = 'Revisado' THEN 1 END) as revisados,
+                COUNT(CASE WHEN Estado = 'Resuelto' THEN 1 END) as resueltos
+            FROM Reportes
+        """, fetch_one=True)
+        
+        return jsonify({
+            'success': True,
+            'reportes': reportes_list,
+            'total': len(reportes_list),
+            'estadisticas': {
+                'total_reportes': stats['total_reportes'] if stats else 0,
+                'pendientes': stats['pendientes'] if stats else 0,
+                'revisados': stats['revisados'] if stats else 0,
+                'resueltos': stats['resueltos'] if stats else 0
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo reportes: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error al obtener reportes: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# API GESTIONAR REPORTE
+# ================================================================
+@app.route('/api/admin/reporte/<int:reporte_id>/accion', methods=['POST'])
+def gestionar_reporte_admin(reporte_id):
+    """Administrador toma acción sobre un reporte"""
+    try:
+        if 'user_id' not in session or session.get('user_role') != 'Administrador':
+            return jsonify({
+                'success': False,
+                'message': 'Acceso denegado. Solo administradores.'
+            }), 403
+        
+        data = request.get_json()
+        accion = data.get('accion')
+        notas = data.get('notas', '')
+        
+        if not accion:
+            return jsonify({
+                'success': False,
+                'message': 'Acción no especificada'
+            }), 400
+        
+        reporte = execute_query("""
+            SELECT r.*, 
+                   ud.Nombre as reportado_nombre, 
+                   ud.Apellido as reportado_apellido,
+                   ud.Estado as reportado_estado
+            FROM Reportes r
+            JOIN Usuario ud ON r.ID_Usuario_Reportado = ud.ID_Usuario
+            WHERE r.ID_Reporte = %s
+        """, (reporte_id,), fetch_one=True)
+        
+        if not reporte:
+            return jsonify({
+                'success': False,
+                'message': 'Reporte no encontrado'
+            }), 404
+        
+        mensaje_respuesta = ''
+        
+        if accion == 'revisar':
+            execute_query("""
+                UPDATE Reportes 
+                SET Estado = 'Revisado' 
+                WHERE ID_Reporte = %s
+            """, (reporte_id,))
+            mensaje_respuesta = 'Reporte marcado como revisado'
+            
+        elif accion == 'resolver':
+            execute_query("""
+                UPDATE Reportes 
+                SET Estado = 'Resuelto' 
+                WHERE ID_Reporte = %s
+            """, (reporte_id,))
+            mensaje_respuesta = 'Reporte resuelto correctamente'
+            
+        elif accion == 'descartar':
+            execute_query("""
+                UPDATE Reportes 
+                SET Estado = 'Resuelto' 
+                WHERE ID_Reporte = %s
+            """, (reporte_id,))
+            mensaje_respuesta = 'Reporte descartado'
+            
+        elif accion == 'bloquear_usuario':
+            execute_query("""
+                UPDATE Usuario 
+                SET Estado = 'Inactivo' 
+                WHERE ID_Usuario = %s
+            """, (reporte['ID_Usuario_Reportado'],))
+            
+            execute_query("""
+                UPDATE Reportes 
+                SET Estado = 'Resuelto' 
+                WHERE ID_Reporte = %s
+            """, (reporte_id,))
+            
+            mensaje_respuesta = f'Usuario {reporte["reportado_nombre"]} {reporte["reportado_apellido"]} bloqueado y reporte resuelto'
+            
+            admin_name = session.get('user_name', 'Admin')
+            print(f"🚫 Admin {admin_name} bloqueó usuario ID {reporte['ID_Usuario_Reportado']} por reporte #{reporte_id}")
+        
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Acción no válida'
+            }), 400
+        
+        admin_name = session.get('user_name', 'Admin')
+        print(f"✅ Admin {admin_name} ejecutó acción '{accion}' en reporte #{reporte_id}")
+        if notas:
+            print(f"   Notas: {notas}")
+        
+        return jsonify({
+            'success': True,
+            'message': mensaje_respuesta
+        })
+        
+    except Exception as e:
+        print(f"❌ Error gestionando reporte: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error al gestionar reporte: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# FUNCIÓN ENVIAR EMAIL
+# ================================================================
+def enviar_notificacion_reporte_admin(reporte_data):
+    """Enviar email a administradores cuando hay un nuevo reporte"""
+    try:
+        admins = execute_query("""
+            SELECT Correo, Nombre, Apellido 
+            FROM Usuario 
+            WHERE Rol = 'Administrador' AND Estado = 'Activo'
+        """)
+        
+        if not admins:
+            print("⚠️ No hay administradores para notificar")
+            return
+        
+        subject = f"🚨 Nuevo Reporte #{reporte_data['id_reporte']} - AgroMatch"
+        
+        html_body = f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #4a7c59, #1e3a2e); color: white; padding: 20px; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 20px; border: 1px solid #ddd; }}
+                .info-box {{ background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #4a7c59; border-radius: 5px; }}
+                .info-box h3 {{ margin-top: 0; color: #4a7c59; }}
+                .footer {{ background: #f1f1f1; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; font-size: 12px; color: #666; }}
+                .button {{ background: #4a7c59; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>🚨 Nuevo Reporte Recibido</h2>
+                    <p>Se ha registrado un nuevo reporte en AgroMatch que requiere tu atención.</p>
+                </div>
+                
+                <div class="content">
+                    <div class="info-box">
+                        <h3>📋 Información del Reporte</h3>
+                        <p><strong>ID Reporte:</strong> #{reporte_data['id_reporte']}</p>
+                        <p><strong>Fecha:</strong> {reporte_data['fecha']}</p>
+                        <p><strong>Estado:</strong> Pendiente</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>👤 Usuario Reportante</h3>
+                        <p><strong>Nombre:</strong> {reporte_data['reportante']['nombre']}</p>
+                        <p><strong>Email:</strong> {reporte_data['reportante']['email']}</p>
+                        <p><strong>Rol:</strong> {reporte_data['reportante']['rol']}</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>🎯 Usuario Reportado</h3>
+                        <p><strong>Nombre:</strong> {reporte_data['reportado']['nombre']}</p>
+                        <p><strong>Email:</strong> {reporte_data['reportado']['email']}</p>
+                        <p><strong>Rol:</strong> {reporte_data['reportado']['rol']}</p>
+                    </div>
+                    
+                    <div class="info-box" style="border-left-color: #dc3545;">
+                        <h3>⚠️ Motivo del Reporte</h3>
+                        <p>{reporte_data['motivo']}</p>
+                    </div>
+                    
+                    <p style="text-align: center; margin: 20px 0;">
+                        <a href="http://localhost:5000/dashboard-admin" class="button">
+                            Ver en Panel de Administrador
+                        </a>
+                    </p>
+                </div>
+                
+                <div class="footer">
+                    <p>Este es un mensaje automático de AgroMatch</p>
+                    <p>Por favor, no respondas a este email</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        for admin in admins:
+            try:
+                msg = Message(
+                    subject=subject,
+                    recipients=[admin['Correo']],
+                    html=html_body
+                )
+                mail.send(msg)
+                print(f"✅ Email enviado a admin: {admin['Nombre']} {admin['Apellido']} ({admin['Correo']})")
+            except Exception as email_error:
+                print(f"❌ Error enviando email a {admin['Correo']}: {email_error}")
+                continue
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error enviando notificación a administradores: {e}")
+        return False
+
+
+# ================================================================
+# API HISTORIAL REPORTES USUARIO
+# ================================================================
+@app.route('/api/admin/usuario/<int:usuario_id>/reportes', methods=['GET'])
+def get_reportes_usuario_admin(usuario_id):
+    """Obtener todos los reportes relacionados con un usuario"""
+    try:
+        if 'user_id' not in session or session.get('user_role') != 'Administrador':
+            return jsonify({
+                'success': False,
+                'message': 'Acceso denegado'
+            }), 403
+        
+        reportes_recibidos = execute_query("""
+            SELECT 
+                r.ID_Reporte,
+                r.Motivo,
+                r.Estado,
+                r.Fecha_Reporte,
+                'recibido' as tipo,
+                CONCAT(ur.Nombre, ' ', ur.Apellido) as otro_usuario
+            FROM Reportes r
+            JOIN Usuario ur ON r.ID_Usuario_Reportante = ur.ID_Usuario
+            WHERE r.ID_Usuario_Reportado = %s
+            ORDER BY r.Fecha_Reporte DESC
+        """, (usuario_id,))
+        
+        reportes_enviados = execute_query("""
+            SELECT 
+                r.ID_Reporte,
+                r.Motivo,
+                r.Estado,
+                r.Fecha_Reporte,
+                'enviado' as tipo,
+                CONCAT(ud.Nombre, ' ', ud.Apellido) as otro_usuario
+            FROM Reportes r
+            JOIN Usuario ud ON r.ID_Usuario_Reportado = ud.ID_Usuario
+            WHERE r.ID_Usuario_Reportante = %s
+            ORDER BY r.Fecha_Reporte DESC
+        """, (usuario_id,))
+        
+        return jsonify({
+            'success': True,
+            'reportes_recibidos': reportes_recibidos or [],
+            'reportes_enviados': reportes_enviados or [],
+            'total_recibidos': len(reportes_recibidos) if reportes_recibidos else 0,
+            'total_enviados': len(reportes_enviados) if reportes_enviados else 0
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo reportes del usuario: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+print("✅ Sistema de Reportes cargado correctamente")
+print("📋 APIs disponibles:")
+print("   • POST /api/reportar-usuario-v2 - Crear nuevo reporte")
+print("   • GET /api/admin/reportes-pendientes - Obtener reportes pendientes")
+print("   • POST /api/admin/reporte/<id>/accion - Gestionar reporte")
+print("   • GET /api/admin/usuario/<id>/reportes - Historial de reportes")
+
+# ================================================================
+# 2. FUNCIÓN AUXILIAR PARA EJECUTAR QUERIES DE FORMA SEGURA
+# ================================================================
+def ejecutar_query_segura(query, params=None, fetch_one=False):
+    """
+    Función auxiliar para ejecutar queries de manera segura
+    Retorna: 
+    - Para INSERT: el ID insertado
+    - Para SELECT: los resultados
+    - Para UPDATE/DELETE: True si fue exitoso
+    """
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        if not conn:
+            print("❌ No se pudo conectar a la base de datos")
+            return None
+        
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, params or ())
+        
+        # Si es INSERT, retornar el ID
+        if query.strip().upper().startswith('INSERT'):
+            conn.commit()
+            insert_id = cursor.lastrowid
+            print(f"✅ INSERT exitoso, ID: {insert_id}")
+            return insert_id
+        
+        # Si es UPDATE o DELETE
+        elif query.strip().upper().startswith(('UPDATE', 'DELETE')):
+            conn.commit()
+            affected = cursor.rowcount
+            print(f"✅ {query.split()[0]} exitoso, filas afectadas: {affected}")
+            return True
+        
+        # Si es SELECT
+        else:
+            if fetch_one:
+                result = cursor.fetchone()
+            else:
+                result = cursor.fetchall()
+            return result
+            
+    except Exception as e:
+        print(f"❌ Error en query: {e}")
+        if conn:
+            conn.rollback()
+        import traceback
+        traceback.print_exc()
+        return None
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+# ================================================================
+# 3. API: CREAR REPORTE
+# ================================================================
+@app.route('/api/reportar-usuario-v2', methods=['POST'])
+def reportar_usuario_nuevo():
+    """Endpoint para reportar usuarios - VERSIÓN NUEVA"""
+    try:
+        # 1. Verificar autenticación
+        if 'user_id' not in session:
+            return jsonify({
+                'success': False,
+                'message': 'Debes iniciar sesión para reportar'
+            }), 401
+        
+        # 2. Obtener datos
+        data = request.get_json()
+        usuario_reportante = session['user_id']
+        usuario_reportado = data.get('usuario_reportado')
+        motivo = data.get('motivo', '').strip()
+        
+        print(f"\n📋 NUEVO REPORTE:")
+        print(f"   Reportante: {usuario_reportante}")
+        print(f"   Reportado: {usuario_reportado}")
+        print(f"   Motivo: {motivo}")
+        
+        # 3. Validaciones
+        if not usuario_reportado or not motivo:
+            return jsonify({
+                'success': False,
+                'message': 'Faltan datos: usuario_reportado y motivo son requeridos'
+            }), 400
+        
+        if len(motivo) < 10:
+            return jsonify({
+                'success': False,
+                'message': 'El motivo debe tener al menos 10 caracteres'
+            }), 400
+        
+        if usuario_reportante == usuario_reportado:
+            return jsonify({
+                'success': False,
+                'message': 'No puedes reportarte a ti mismo'
+            }), 400
+        
+        # 4. Verificar que el usuario reportado existe
+        usuario_existe = ejecutar_query_segura(
+            "SELECT ID_Usuario, Nombre, Apellido, Correo FROM Usuario WHERE ID_Usuario = %s",
+            (usuario_reportado,),
+            fetch_one=True
+        )
+        
+        if not usuario_existe:
+            return jsonify({
+                'success': False,
+                'message': 'El usuario reportado no existe'
+            }), 404
+        
+        # 5. Verificar que no hay reporte duplicado pendiente
+        reporte_existente = ejecutar_query_segura(
+            """SELECT ID_Reporte FROM Reportes 
+               WHERE ID_Usuario_Reportante = %s 
+               AND ID_Usuario_Reportado = %s 
+               AND Estado = 'Pendiente'""",
+            (usuario_reportante, usuario_reportado),
+            fetch_one=True
+        )
+        
+        if reporte_existente:
+            return jsonify({
+                'success': False,
+                'message': 'Ya tienes un reporte pendiente sobre este usuario'
+            }), 400
+        
+        # 6. Insertar el reporte en la base de datos
+        reporte_id = ejecutar_query_segura(
+            """INSERT INTO Reportes 
+               (ID_Usuario_Reportante, ID_Usuario_Reportado, Motivo, Estado, Fecha_Reporte)
+               VALUES (%s, %s, %s, 'Pendiente', NOW())""",
+            (usuario_reportante, usuario_reportado, motivo)
+        )
+        
+        if not reporte_id:
+            return jsonify({
+                'success': False,
+                'message': 'Error al guardar el reporte en la base de datos'
+            }), 500
+        
+        print(f"✅ Reporte #{reporte_id} creado exitosamente")
+        
+        # 7. Obtener información del reportante para el email
+        reportante_info = ejecutar_query_segura(
+            "SELECT Nombre, Apellido, Correo FROM Usuario WHERE ID_Usuario = %s",
+            (usuario_reportante,),
+            fetch_one=True
+        )
+        
+        # 8. Enviar notificación por email a administradores
+        try:
+            reporte_data = {
+                'id_reporte': reporte_id,
+                'reportante': {
+                    'nombre': f"{reportante_info['Nombre']} {reportante_info['Apellido']}",
+                    'email': reportante_info['Correo']
+                },
+                'reportado': {
+                    'nombre': f"{usuario_existe['Nombre']} {usuario_existe['Apellido']}",
+                    'email': usuario_existe['Correo']
+                },
+                'motivo': motivo,
+                'fecha': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            enviar_email_reporte(reporte_data)
+        except Exception as email_error:
+            print(f"⚠️ Error enviando email (no crítico): {email_error}")
+        
+        # 9. Respuesta exitosa
+        return jsonify({
+            'success': True,
+            'message': 'Reporte enviado correctamente. Un administrador lo revisará pronto.',
+            'reporte_id': reporte_id
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ ERROR CRÍTICO en reportar_usuario_nuevo: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error interno del servidor: {str(e)}'
+        }), 500
+
+
+# ================================================================
+# 4. API: OBTENER REPORTES (ADMIN)
+# ================================================================
+@app.route('/api/admin/reportes-pendientes', methods=['GET'])
+def obtener_reportes_admin():
+    """Obtener reportes para el panel de administrador"""
+    try:
+        # Verificar que es admin
+        if 'user_id' not in session or session.get('user_role') != 'Administrador':
+            return jsonify({
+                'success': False,
+                'message': 'Acceso denegado. Solo administradores.'
+            }), 403
+        
+        estado_filtro = request.args.get('estado', 'Pendiente')
+        
+        # Obtener reportes
+        reportes = ejecutar_query_segura("""
+            SELECT 
+                r.ID_Reporte,
+                r.Motivo,
+                r.Estado,
+                r.Fecha_Reporte,
+                ur.ID_Usuario as reportante_id,
+                ur.Nombre as reportante_nombre,
+                ur.Apellido as reportante_apellido,
+                ur.Correo as reportante_email,
+                ud.ID_Usuario as reportado_id,
+                ud.Nombre as reportado_nombre,
+                ud.Apellido as reportado_apellido,
+                ud.Correo as reportado_email,
+                ud.Estado as reportado_estado
+            FROM Reportes r
+            INNER JOIN Usuario ur ON r.ID_Usuario_Reportante = ur.ID_Usuario
+            INNER JOIN Usuario ud ON r.ID_Usuario_Reportado = ud.ID_Usuario
+            WHERE r.Estado = %s
+            ORDER BY r.Fecha_Reporte DESC
+        """, (estado_filtro,))
+        
+        # Formatear reportes
+        reportes_formateados = []
+        if reportes:
+            for r in reportes:
+                reportes_formateados.append({
+                    'id_reporte': r['ID_Reporte'],
+                    'motivo': r['Motivo'],
+                    'estado': r['Estado'],
+                    'fecha_reporte': r['Fecha_Reporte'].strftime('%Y-%m-%d %H:%M:%S') if hasattr(r['Fecha_Reporte'], 'strftime') else str(r['Fecha_Reporte']),
+                    'reportante': {
+                        'id': r['reportante_id'],
+                        'nombre': f"{r['reportante_nombre']} {r['reportante_apellido']}",
+                        'email': r['reportante_email']
+                    },
+                    'reportado': {
+                        'id': r['reportado_id'],
+                        'nombre': f"{r['reportado_nombre']} {r['reportado_apellido']}",
+                        'email': r['reportado_email'],
+                        'estado': r['reportado_estado']
+                    }
+                })
+        
+        # Obtener estadísticas
+        stats = ejecutar_query_segura("""
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN Estado = 'Pendiente' THEN 1 ELSE 0 END) as pendientes,
+                SUM(CASE WHEN Estado = 'Revisado' THEN 1 ELSE 0 END) as revisados,
+                SUM(CASE WHEN Estado = 'Resuelto' THEN 1 ELSE 0 END) as resueltos
+            FROM Reportes
+        """, fetch_one=True)
+        
+        return jsonify({
+            'success': True,
+            'reportes': reportes_formateados,
+            'total': len(reportes_formateados),
+            'estadisticas': {
+                'total_reportes': stats['total'] if stats else 0,
+                'pendientes': stats['pendientes'] if stats else 0,
+                'revisados': stats['revisados'] if stats else 0,
+                'resueltos': stats['resueltos'] if stats else 0
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Error en obtener_reportes_admin: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+# ================================================================
+# 5. API: GESTIONAR REPORTE (ADMIN)
+# ================================================================
+@app.route('/api/admin/reporte/<int:reporte_id>/accion', methods=['POST'])
+def gestionar_reporte(reporte_id):
+    """Administrador toma acción sobre un reporte"""
+    try:
+        # Verificar admin
+        if 'user_id' not in session or session.get('user_role') != 'Administrador':
+            return jsonify({
+                'success': False,
+                'message': 'Acceso denegado'
+            }), 403
+        
+        data = request.get_json()
+        accion = data.get('accion')
+        
+        if not accion:
+            return jsonify({
+                'success': False,
+                'message': 'Acción no especificada'
+            }), 400
+        
+        # Obtener info del reporte
+        reporte = ejecutar_query_segura(
+            "SELECT * FROM Reportes WHERE ID_Reporte = %s",
+            (reporte_id,),
+            fetch_one=True
+        )
+        
+        if not reporte:
+            return jsonify({
+                'success': False,
+                'message': 'Reporte no encontrado'
+            }), 404
+        
+        mensaje = ''
+        
+        # Ejecutar acción
+        if accion == 'revisar':
+            ejecutar_query_segura(
+                "UPDATE Reportes SET Estado = 'Revisado' WHERE ID_Reporte = %s",
+                (reporte_id,)
+            )
+            mensaje = 'Reporte marcado como revisado'
+            
+        elif accion == 'resolver':
+            ejecutar_query_segura(
+                "UPDATE Reportes SET Estado = 'Resuelto' WHERE ID_Reporte = %s",
+                (reporte_id,)
+            )
+            mensaje = 'Reporte marcado como resuelto'
+            
+        elif accion == 'bloquear_usuario':
+            # Bloquear usuario reportado
+            ejecutar_query_segura(
+                "UPDATE Usuario SET Estado = 'Inactivo' WHERE ID_Usuario = %s",
+                (reporte['ID_Usuario_Reportado'],)
+            )
+            # Marcar reporte como resuelto
+            ejecutar_query_segura(
+                "UPDATE Reportes SET Estado = 'Resuelto' WHERE ID_Reporte = %s",
+                (reporte_id,)
+            )
+            mensaje = 'Usuario bloqueado y reporte resuelto'
+            print(f"🚫 Admin bloqueó usuario ID {reporte['ID_Usuario_Reportado']} por reporte #{reporte_id}")
+            
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Acción no válida'
+            }), 400
+        
+        print(f"✅ Acción '{accion}' ejecutada en reporte #{reporte_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': mensaje
+        })
+        
+    except Exception as e:
+        print(f"❌ Error en gestionar_reporte: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+# ================================================================
+# 6. FUNCIÓN: ENVIAR EMAIL A ADMINS
+# ================================================================
+def enviar_email_reporte(reporte_data):
+    """Enviar email a administradores cuando hay un nuevo reporte"""
+    try:
+        # Obtener emails de admins
+        admins = ejecutar_query_segura("""
+            SELECT Correo, Nombre, Apellido 
+            FROM Usuario 
+            WHERE Rol = 'Administrador' AND Estado = 'Activo'
+        """)
+        
+        if not admins:
+            print("⚠️ No hay administradores para notificar")
+            return
+        
+        subject = f"🚨 Nuevo Reporte #{reporte_data['id_reporte']} - AgroMatch"
+        
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+                <div style="background: linear-gradient(135deg, #4a7c59, #1e3a2e); color: white; padding: 20px; text-align: center;">
+                    <h2>🚨 Nuevo Reporte Recibido</h2>
+                </div>
+                
+                <div style="padding: 20px; background: #f9f9f9;">
+                    <div style="background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #4a7c59; border-radius: 5px;">
+                        <h3 style="margin-top: 0; color: #4a7c59;">📋 Información del Reporte</h3>
+                        <p><strong>ID:</strong> #{reporte_data['id_reporte']}</p>
+                        <p><strong>Fecha:</strong> {reporte_data['fecha']}</p>
+                    </div>
+                    
+                    <div style="background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #2563eb; border-radius: 5px;">
+                        <h3 style="margin-top: 0; color: #2563eb;">👤 Reportante</h3>
+                        <p><strong>Nombre:</strong> {reporte_data['reportante']['nombre']}</p>
+                        <p><strong>Email:</strong> {reporte_data['reportante']['email']}</p>
+                    </div>
+                    
+                    <div style="background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #dc3545; border-radius: 5px;">
+                        <h3 style="margin-top: 0; color: #dc3545;">🎯 Reportado</h3>
+                        <p><strong>Nombre:</strong> {reporte_data['reportado']['nombre']}</p>
+                        <p><strong>Email:</strong> {reporte_data['reportado']['email']}</p>
+                    </div>
+                    
+                    <div style="background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #ffc107; border-radius: 5px;">
+                        <h3 style="margin-top: 0; color: #ffc107;">⚠️ Motivo</h3>
+                        <p>{reporte_data['motivo']}</p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 20px 0;">
+                        <a href="http://localhost:5000/dashboard-admin" 
+                           style="background: #4a7c59; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                            Ver en Panel de Admin
+                        </a>
+                    </div>
+                </div>
+                
+                <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #666;">
+                    <p>Este es un mensaje automático de AgroMatch</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Enviar email a cada admin
+        for admin in admins:
+            try:
+                msg = Message(
+                    subject=subject,
+                    recipients=[admin['Correo']],
+                    html=html_body
+                )
+                mail.send(msg)
+                print(f"✅ Email enviado a: {admin['Correo']}")
+            except Exception as e:
+                print(f"⚠️ Error enviando email a {admin['Correo']}: {e}")
+        
+    except Exception as e:
+        print(f"❌ Error en enviar_email_reporte: {e}")
+
+
+# ================================================================
+# MENSAJE DE CONFIRMACIÓN
+# ================================================================
+print("\n" + "="*60)
+print("✅ SISTEMA DE REPORTES CARGADO CORRECTAMENTE")
+print("="*60)
+print("📋 APIs Disponibles:")
+print("   • POST /api/reportar-usuario-v2")
+print("   • GET  /api/admin/reportes-pendientes")
+print("   • POST /api/admin/reporte/<id>/accion")
+print("="*60 + "\n")
+
+@app.route('/api/documentos-usuario/<int:user_id>', methods=['GET'])
+def get_documentos_usuario(user_id):
+    try:
+        # Verificar que el usuario esté autenticado
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        print(f"🔍 Buscando documentos para usuario: {user_id}")
+        
+        # Conexión directa usando mysql.connector
+        conn = mysql.connector.connect(
+            host='localhost',
+            database='Agromach_V2',
+            user='root',
+            password='123456',
+            charset='utf8mb4',
+            collation='utf8mb4_unicode_ci'
+        )
+        
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT 
+                ID_Anexo,
+                Tipo_Archivo,
+                URL_Archivo,
+                Descripcion,
+                Fecha_Subida
+            FROM anexo
+            WHERE ID_Usuario = %s
+            ORDER BY Fecha_Subida DESC
+        """
+        
+        cursor.execute(query, (user_id,))
+        documentos_raw = cursor.fetchall()
+        
+        print(f"📄 Registros encontrados en BD: {len(documentos_raw)}")
+        
+        cursor.close()
+        conn.close()
+        
+        # Formatear documentos
+        documentos = []
+        for doc in documentos_raw:
+            documento = {
+                'id': doc[0],
+                'tipo_documento': doc[3] if doc[3] else doc[1],  # Descripcion o Tipo_Archivo
+                'archivo_url': doc[2],
+                'descripcion': doc[3],
+                'fecha_subida': doc[4].isoformat() if doc[4] else None
+            }
+            documentos.append(documento)
+            print(f"  ✅ Doc {doc[0]}: {documento['tipo_documento']} - {documento['archivo_url']}")
+        
+        print(f"✅ Total documentos formateados: {len(documentos)}")
+        
+        return jsonify({
+            'success': True,
+            'documentos': documentos,
+            'total': len(documentos)
+        })
+        
+    except mysql.connector.Error as db_error:
+        print(f"❌ Error de base de datos: {db_error}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error de base de datos: {str(db_error)}'
+        }), 500
+        
+    except Exception as e:
+        print(f"❌ Error general obteniendo documentos: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error al obtener documentos: {str(e)}'
+        }), 500
+
+# ===================================================================
+# ENDPOINT PARA CANCELAR POSTULACIÓN
+# ===================================================================
+@app.route('/api/cancel_application/<int:application_id>', methods=['DELETE'])
+def cancel_application(application_id):
+    """Cancelar una postulación del trabajador"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({
+                'success': False,
+                'message': 'Sesión no válida'
+            }), 401
+        
+        user_id = session['user_id']
+        user_role = session.get('user_role') or session.get('role')
+        
+        if user_role != 'Trabajador':
+            return jsonify({
+                'success': False,
+                'message': 'Solo los trabajadores pueden cancelar postulaciones'
+            }), 403
+        
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        
+        # Verificar que la postulación existe y pertenece al usuario
+        check_query = """
+        SELECT ID_Postulacion, Estado 
+        FROM Postulacion 
+        WHERE ID_Postulacion = %s AND ID_Trabajador = %s
+        """
+        cursor.execute(check_query, (application_id, user_id))
+        result = cursor.fetchone()
+        
+        if not result:
+            cursor.close()
+            connection.close()
+            return jsonify({
+                'success': False,
+                'message': 'Postulación no encontrada'
+            }), 404
+        
+        # Verificar que la postulación esté en estado Pendiente
+        if result[1] != 'Pendiente':
+            cursor.close()
+            connection.close()
+            return jsonify({
+                'success': False,
+                'message': f'No se puede cancelar una postulación en estado {result[1]}'
+            }), 400
+        
+        # Eliminar la postulación
+        delete_query = "DELETE FROM Postulacion WHERE ID_Postulacion = %s"
+        cursor.execute(delete_query, (application_id,))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        print(f"✅ Postulación {application_id} cancelada por usuario {user_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Postulación cancelada exitosamente'
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error cancelando postulación: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error interno del servidor: {str(e)}'
+        }), 500
+
+# ===================================================================
+# ENDPOINT PARA ESTADÍSTICAS DEL TRABAJADOR (MEJORADO)
+# ===================================================================
+@app.route('/api/get_worker_stats', methods=['GET'])
+def get_worker_stats():
+    """Obtener estadísticas del trabajador - MEJORADO"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({
+                'success': False,
+                'message': 'Sesión no válida'
+            }), 401
+        
+        user_id = session['user_id']
+        
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Contar postulaciones totales
+        cursor.execute("""
+            SELECT COUNT(*) as total 
+            FROM Postulacion 
+            WHERE ID_Trabajador = %s
+        """, (user_id,))
+        applications = cursor.fetchone()['total']
+        
+        # Contar trabajos activos (Aceptados)
+        cursor.execute("""
+            SELECT COUNT(*) as total 
+            FROM Postulacion 
+            WHERE ID_Trabajador = %s AND Estado = 'Aceptada'
+        """, (user_id,))
+        active_jobs = cursor.fetchone()['total']
+        
+        # Contar trabajos finalizados
+        cursor.execute("""
+            SELECT COUNT(*) as total 
+            FROM Acuerdo_Laboral 
+            WHERE ID_Trabajador = %s AND Estado = 'Finalizado'
+        """, (user_id,))
+        total_jobs = cursor.fetchone()['total']
+        
+        # Calcular horas totales (estimado: 8 horas por trabajo)
+        total_hours = total_jobs * 8
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({
+            'success': True,
+            'applications': applications,
+            'active_jobs': active_jobs,
+            'total_jobs': total_jobs,
+            'total_hours': total_hours
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo estadísticas: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error interno: {str(e)}'
+        }), 500
+
+# ===================================================================
+# ENDPOINT EXCLUSIVO PARA VER DOCUMENTOS DESDE PERFIL DE POSTULACIONES
+# ===================================================================
+
+@app.route('/api/ver-documentos-trabajador/<int:trabajador_id>', methods=['GET'])
+def ver_documentos_trabajador_perfil(trabajador_id):
+    """
+    Endpoint exclusivo para ver documentos desde el modal de perfil
+    Ruta: /api/ver-documentos-trabajador/<trabajador_id>
+    """
+    try:
+        # Verificar que el usuario esté autenticado
+        if 'user_id' not in session:
+            print('❌ Usuario no autenticado')
+            return jsonify({
+                'success': False, 
+                'message': 'No autenticado'
+            }), 401
+        
+        # Verificar que sea agricultor
+        user_role = session.get('user_role') or session.get('role')
+        if user_role != 'Agricultor':
+            print(f'❌ Usuario no es agricultor: {user_role}')
+            return jsonify({
+                'success': False,
+                'message': 'Solo agricultores pueden ver documentos'
+            }), 403
+        
+        print(f'🔍 Agricultor {session["user_id"]} solicita documentos de trabajador {trabajador_id}')
+        
+        # Conectar a la base de datos
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Query para obtener documentos del trabajador
+        query = """
+            SELECT 
+                ID_Anexo,
+                Tipo_Archivo,
+                URL_Archivo,
+                Descripcion,
+                Fecha_Subida
+            FROM Anexo
+            WHERE ID_Usuario = %s
+            ORDER BY Fecha_Subida DESC
+        """
+        
+        cursor.execute(query, (trabajador_id,))
+        documentos_raw = cursor.fetchall()
+        
+        print(f'📄 Documentos encontrados en BD: {len(documentos_raw)}')
+        
+        # Cerrar conexión
+        cursor.close()
+        connection.close()
+        
+        # Si no hay documentos, retornar lista vacía (no error)
+        if not documentos_raw or len(documentos_raw) == 0:
+            print('ℹ️ No se encontraron documentos para este trabajador')
+            return jsonify({
+                'success': True,
+                'documentos': [],
+                'total': 0,
+                'message': 'Este trabajador no ha subido documentos'
+            }), 200
+        
+        # Formatear documentos para el frontend
+        documentos = []
+        for doc in documentos_raw:
+            # Determinar el nombre del documento
+            nombre_documento = doc.get('Descripcion') or doc.get('Tipo_Archivo') or 'Documento'
+            
+            # Crear objeto de documento
+            documento = {
+                'id': doc['ID_Anexo'],
+                'tipo_documento': nombre_documento,
+                'tipo_archivo': doc.get('Tipo_Archivo'),
+                'archivo_url': doc.get('URL_Archivo'),
+                'descripcion': doc.get('Descripcion'),
+                'fecha_subida': doc['Fecha_Subida'].isoformat() if doc.get('Fecha_Subida') else None
+            }
+            
+            documentos.append(documento)
+            print(f'  ✅ Doc {doc["ID_Anexo"]}: {nombre_documento} - {doc.get("URL_Archivo")}')
+        
+        print(f'✅ Total documentos formateados: {len(documentos)}')
+        
+        # Retornar respuesta exitosa
+        return jsonify({
+            'success': True,
+            'documentos': documentos,
+            'total': len(documentos),
+            'trabajador_id': trabajador_id
+        }), 200
+        
+    except Exception as e:
+        print(f'❌ Error obteniendo documentos del trabajador: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        
+        return jsonify({
+            'success': False,
+            'message': f'Error al obtener documentos: {str(e)}',
+            'documentos': [],
+            'total': 0
+        }), 500
+
+# Mensaje de confirmación
+print('✅ Endpoint /api/ver-documentos-trabajador/<trabajador_id> cargado correctamente')
+print('   📌 Uso: GET /api/ver-documentos-trabajador/123')
+print('   📌 Exclusivo para modal de perfil de postulaciones')
+
+# ================================================================
+# ENDPOINTS DE NOTIFICACIONES DINÁMICAS
+# Agregar al final de tu app.py (después de tus otros endpoints)
+# ================================================================
+
+@app.route('/api/notificaciones', methods=['GET'])
+def obtener_notificaciones():
+    """Genera notificaciones dinámicamente desde las tablas existentes"""
+    try:
+        # Verificar sesión
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        user_id = session.get('user_id')
+        user_role = session.get('user_role', '')
+        notificaciones_leidas = session.get('notificaciones_leidas', [])
+        
+        print(f"🔔 Generando notificaciones para user_id={user_id}, role={user_role}")
+        
+        # Obtener conexión
+        conexion = get_db_connection()
+        if not conexion:
+            return jsonify({'success': False, 'message': 'Error de conexión'}), 500
+        
+        cursor = conexion.cursor(dictionary=True)
+        notificaciones = []
+        
+        # ============================================================
+        # NOTIFICACIONES PARA TRABAJADOR
+        # ============================================================
+        if user_role == 'Trabajador':
+            
+            # 1. Postulaciones respondidas (últimos 7 días)
+            query_postulaciones = """
+                SELECT 
+                    p.id_postulacion, p.estado, p.fecha_postulacion,
+                    o.titulo as oferta_titulo, o.id_oferta,
+                    CONCAT(u.first_name, ' ', u.last_name) as nombre_agricultor
+                FROM postulaciones p
+                JOIN ofertas_trabajo o ON o.id_oferta = p.id_oferta
+                JOIN usuarios u ON u.id_usuario = o.id_agricultor
+                WHERE p.id_trabajador = %s
+                AND p.estado IN ('Aceptada', 'Rechazada')
+                AND p.fecha_postulacion >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY p.fecha_postulacion DESC
+                LIMIT 10
+            """
+            
+            cursor.execute(query_postulaciones, (user_id,))
+            postulaciones = cursor.fetchall()
+            
+            for post in postulaciones:
+                notif_id = f"post_{post['estado'].lower()}_{post['id_postulacion']}"
+                
+                if post['estado'] == 'Aceptada':
+                    notificaciones.append({
+                        'id': notif_id,
+                        'tipo': 'postulacion_aceptada',
+                        'titulo': '¡Felicitaciones! 🎉',
+                        'mensaje': f"{post['nombre_agricultor']} aceptó tu postulación para '{post['oferta_titulo']}'",
+                        'fecha': str(post['fecha_postulacion']),
+                        'leida': notif_id in notificaciones_leidas,
+                        'url_accion': '/vista/postulaciones.html'
+                    })
+                else:
+                    notificaciones.append({
+                        'id': notif_id,
+                        'tipo': 'postulacion_rechazada',
+                        'titulo': 'Postulación no aceptada',
+                        'mensaje': f"Tu postulación para '{post['oferta_titulo']}' no fue aceptada",
+                        'fecha': str(post['fecha_postulacion']),
+                        'leida': notif_id in notificaciones_leidas,
+                        'url_accion': '/vista/index-trabajador.html'
+                    })
+            
+            # 2. Nuevas ofertas (últimas 24 horas)
+            query_ofertas = """
+                SELECT id_oferta, titulo, pago_ofrecido, fecha_publicacion, ubicacion
+                FROM ofertas_trabajo
+                WHERE estado = 'Abierta'
+                AND fecha_publicacion >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                ORDER BY fecha_publicacion DESC
+                LIMIT 5
+            """
+            
+            cursor.execute(query_ofertas)
+            ofertas = cursor.fetchall()
+            
+            for oferta in ofertas:
+                notif_id = f"nueva_oferta_{oferta['id_oferta']}"
+                pago = float(oferta['pago_ofrecido']) if oferta['pago_ofrecido'] else 0
+                notificaciones.append({
+                    'id': notif_id,
+                    'tipo': 'nueva_oferta',
+                    'titulo': 'Nueva oferta disponible 💼',
+                    'mensaje': f"{oferta['titulo']} - ${pago:,.0f}/día en {oferta['ubicacion']}",
+                    'fecha': str(oferta['fecha_publicacion']),
+                    'leida': notif_id in notificaciones_leidas,
+                    'url_accion': '/vista/index-trabajador.html'
+                })
+            
+            # 3. Recordatorios de trabajos aceptados
+            query_recordatorios = """
+                SELECT 
+                    p.id_postulacion, o.titulo, p.fecha_postulacion,
+                    CONCAT(u.first_name, ' ', u.last_name) as nombre_agricultor
+                FROM postulaciones p
+                JOIN ofertas_trabajo o ON o.id_oferta = p.id_oferta
+                JOIN usuarios u ON u.id_usuario = o.id_agricultor
+                WHERE p.id_trabajador = %s
+                AND p.estado = 'Aceptada'
+                AND o.estado = 'Abierta'
+                ORDER BY p.fecha_postulacion DESC
+                LIMIT 3
+            """
+            
+            cursor.execute(query_recordatorios, (user_id,))
+            trabajos = cursor.fetchall()
+            
+            for trabajo in trabajos:
+                notif_id = f"recordatorio_{trabajo['id_postulacion']}"
+                notificaciones.append({
+                    'id': notif_id,
+                    'tipo': 'recordatorio',
+                    'titulo': 'Recordatorio de trabajo 📅',
+                    'mensaje': f"Trabajo confirmado: '{trabajo['titulo']}' con {trabajo['nombre_agricultor']}",
+                    'fecha': str(trabajo['fecha_postulacion']),
+                    'leida': notif_id in notificaciones_leidas,
+                    'url_accion': '/vista/postulaciones.html'
+                })
+        
+        # ============================================================
+        # NOTIFICACIONES PARA AGRICULTOR
+        # ============================================================
+        elif user_role == 'Agricultor':
+            
+            # 1. Nuevas postulaciones pendientes (últimos 3 días)
+            query_nuevas_post = """
+                SELECT 
+                    p.id_postulacion, p.fecha_postulacion,
+                    o.titulo as oferta_titulo, o.id_oferta,
+                    CONCAT(u.first_name, ' ', u.last_name) as nombre_trabajador,
+                    COALESCE((SELECT AVG(c.calificacion) 
+                     FROM calificaciones c 
+                     WHERE c.id_calificado = p.id_trabajador), 0) as calificacion
+                FROM postulaciones p
+                JOIN ofertas_trabajo o ON o.id_oferta = p.id_oferta
+                JOIN usuarios u ON u.id_usuario = p.id_trabajador
+                WHERE o.id_agricultor = %s
+                AND p.estado = 'Pendiente'
+                AND p.fecha_postulacion >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+                ORDER BY p.fecha_postulacion DESC
+                LIMIT 15
+            """
+            
+            cursor.execute(query_nuevas_post, (user_id,))
+            nuevas_post = cursor.fetchall()
+            
+            for post in nuevas_post:
+                notif_id = f"nueva_postulacion_{post['id_postulacion']}"
+                calificacion = float(post['calificacion']) if post['calificacion'] else 0
+                estrellas = '⭐' * int(round(calificacion))
+                
+                notificaciones.append({
+                    'id': notif_id,
+                    'tipo': 'nueva_postulacion',
+                    'titulo': 'Nueva postulación 👤',
+                    'mensaje': f"{post['nombre_trabajador']} {estrellas} se postuló a '{post['oferta_titulo']}'",
+                    'fecha': str(post['fecha_postulacion']),
+                    'leida': notif_id in notificaciones_leidas,
+                    'url_accion': f'/vista/index-agricultor.html#oferta-{post["id_oferta"]}'
+                })
+            
+            # 2. Ofertas antiguas (más de 25 días)
+            query_ofertas_antiguas = """
+                SELECT 
+                    id_oferta, titulo, fecha_publicacion,
+                    DATEDIFF(NOW(), fecha_publicacion) as dias_publicada,
+                    (SELECT COUNT(*) FROM postulaciones 
+                     WHERE id_oferta = ofertas_trabajo.id_oferta 
+                     AND estado = 'Pendiente') as pendientes
+                FROM ofertas_trabajo
+                WHERE id_agricultor = %s
+                AND estado = 'Abierta'
+                AND DATEDIFF(NOW(), fecha_publicacion) >= 25
+                ORDER BY fecha_publicacion DESC
+                LIMIT 5
+            """
+            
+            cursor.execute(query_ofertas_antiguas, (user_id,))
+            ofertas_antiguas = cursor.fetchall()
+            
+            for oferta in ofertas_antiguas:
+                notif_id = f"oferta_venciendo_{oferta['id_oferta']}"
+                notificaciones.append({
+                    'id': notif_id,
+                    'tipo': 'recordatorio',
+                    'titulo': 'Oferta antigua ⏰',
+                    'mensaje': f"'{oferta['titulo']}' lleva {oferta['dias_publicada']} días publicada ({oferta['pendientes']} pendientes)",
+                    'fecha': str(oferta['fecha_publicacion']),
+                    'leida': notif_id in notificaciones_leidas,
+                    'url_accion': '/vista/index-agricultor.html'
+                })
+            
+            # 3. Trabajos activos
+            query_trabajos_activos = """
+                SELECT 
+                    a.id_acuerdo, a.fecha_inicio, o.titulo,
+                    CONCAT(u.first_name, ' ', u.last_name) as nombre_trabajador,
+                    DATEDIFF(NOW(), a.fecha_inicio) as dias_activo
+                FROM acuerdos_laborales a
+                JOIN ofertas_trabajo o ON o.id_oferta = a.id_oferta
+                JOIN usuarios u ON u.id_usuario = a.id_trabajador
+                WHERE a.id_agricultor = %s
+                AND a.estado = 'Activo'
+                ORDER BY a.fecha_inicio DESC
+                LIMIT 5
+            """
+            
+            cursor.execute(query_trabajos_activos, (user_id,))
+            trabajos_activos = cursor.fetchall()
+            
+            for trabajo in trabajos_activos:
+                notif_id = f"trabajo_activo_{trabajo['id_acuerdo']}"
+                notificaciones.append({
+                    'id': notif_id,
+                    'tipo': 'mensaje',
+                    'titulo': 'Trabajo en progreso 🔄',
+                    'mensaje': f"{trabajo['nombre_trabajador']} trabajando en '{trabajo['titulo']}' (día {trabajo['dias_activo']})",
+                    'fecha': str(trabajo['fecha_inicio']),
+                    'leida': notif_id in notificaciones_leidas,
+                    'url_accion': '/vista/historial-contrataciones.html'
+                })
+        
+        # Cerrar cursor y conexión
+        cursor.close()
+        conexion.close()
+        
+        # Ordenar por fecha (más recientes primero)
+        notificaciones.sort(key=lambda x: x['fecha'], reverse=True)
+        notificaciones = notificaciones[:30]
+        
+        # Contar no leídas
+        no_leidas = len([n for n in notificaciones if not n['leida']])
+        
+        print(f"✅ {len(notificaciones)} notificaciones generadas ({no_leidas} no leídas)")
+        
+        return jsonify({
+            'success': True,
+            'notificaciones': notificaciones,
+            'total': len(notificaciones),
+            'no_leidas': no_leidas
+        })
+        
+    except Exception as e:
+        print(f"❌ Error generando notificaciones: {e}")
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/notificaciones/<notif_id>/marcar-leida', methods=['PUT'])
+def marcar_notificacion_leida(notif_id):
+    """Marca una notificación como leída"""
+    try:
+        if 'notificaciones_leidas' not in session:
+            session['notificaciones_leidas'] = []
+        
+        if notif_id not in session['notificaciones_leidas']:
+            session['notificaciones_leidas'].append(notif_id)
+            session.modified = True
+            print(f"✅ Notificación {notif_id} marcada como leída")
+        
+        return jsonify({'success': True, 'message': 'Notificación marcada como leída'})
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/notificaciones/marcar-todas-leidas', methods=['PUT'])
+def marcar_todas_leidas():
+    """Marca todas las notificaciones como leídas"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'No autenticado'}), 401
+        
+        user_id = session.get('user_id')
+        user_role = session.get('user_role', '')
+        
+        # Obtener conexión
+        conexion = get_db_connection()
+        if not conexion:
+            return jsonify({'success': False, 'message': 'Error de conexión'}), 500
+        
+        cursor = conexion.cursor(dictionary=True)
+        notif_ids = []
+        
+        # Generar IDs según el rol
+        if user_role == 'Trabajador':
+            # Postulaciones
+            cursor.execute("""
+                SELECT id_postulacion, estado 
+                FROM postulaciones 
+                WHERE id_trabajador = %s 
+                AND estado IN ('Aceptada', 'Rechazada')
+                AND fecha_postulacion >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            """, (user_id,))
+            
+            for p in cursor.fetchall():
+                notif_ids.append(f"post_{p['estado'].lower()}_{p['id_postulacion']}")
+            
+            # Ofertas
+            cursor.execute("""
+                SELECT id_oferta 
+                FROM ofertas_trabajo 
+                WHERE estado = 'Abierta' 
+                AND fecha_publicacion >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+            """)
+            
+            for o in cursor.fetchall():
+                notif_ids.append(f"nueva_oferta_{o['id_oferta']}")
+            
+            # Recordatorios
+            cursor.execute("""
+                SELECT p.id_postulacion
+                FROM postulaciones p
+                JOIN ofertas_trabajo o ON o.id_oferta = p.id_oferta
+                WHERE p.id_trabajador = %s
+                AND p.estado = 'Aceptada'
+                AND o.estado = 'Abierta'
+            """, (user_id,))
+            
+            for r in cursor.fetchall():
+                notif_ids.append(f"recordatorio_{r['id_postulacion']}")
+        
+        elif user_role == 'Agricultor':
+            # Postulaciones
+            cursor.execute("""
+                SELECT p.id_postulacion
+                FROM postulaciones p
+                JOIN ofertas_trabajo o ON o.id_oferta = p.id_oferta
+                WHERE o.id_agricultor = %s
+                AND p.estado = 'Pendiente'
+                AND p.fecha_postulacion >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+            """, (user_id,))
+            
+            for p in cursor.fetchall():
+                notif_ids.append(f"nueva_postulacion_{p['id_postulacion']}")
+            
+            # Ofertas antiguas
+            cursor.execute("""
+                SELECT id_oferta 
+                FROM ofertas_trabajo 
+                WHERE id_agricultor = %s 
+                AND estado = 'Abierta' 
+                AND DATEDIFF(NOW(), fecha_publicacion) >= 25
+            """, (user_id,))
+            
+            for o in cursor.fetchall():
+                notif_ids.append(f"oferta_venciendo_{o['id_oferta']}")
+            
+            # Trabajos activos
+            cursor.execute("""
+                SELECT id_acuerdo 
+                FROM acuerdos_laborales 
+                WHERE id_agricultor = %s 
+                AND estado = 'Activo'
+            """, (user_id,))
+            
+            for t in cursor.fetchall():
+                notif_ids.append(f"trabajo_activo_{t['id_acuerdo']}")
+        
+        cursor.close()
+        conexion.close()
+        
+        # Guardar en sesión
+        session['notificaciones_leidas'] = notif_ids
+        session.modified = True
+        
+        print(f"✅ {len(notif_ids)} notificaciones marcadas como leídas")
+        
+        return jsonify({
+            'success': True, 
+            'message': f'{len(notif_ids)} notificaciones marcadas como leídas'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ================================================================
+# SISTEMA DE CALIFICACIONES - ENDPOINTS
+# ================================================================
+
+@app.route('/api/get_user_rating/<int:user_id>', methods=['GET'])
+def get_user_rating(user_id):
+    """Obtiene la calificación promedio de un usuario"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Calcular promedio de calificaciones recibidas
+        query = """
+            SELECT 
+                COALESCE(AVG(CAST(Puntuacion AS DECIMAL(3,2))), 0) as promedio,
+                COUNT(*) as total_calificaciones
+            FROM Calificacion
+            WHERE ID_Usuario_Receptor = %s
+        """
+        cursor.execute(query, (user_id,))
+        result = cursor.fetchone()
+        
+        promedio = float(result['promedio']) if result['promedio'] else 0.0
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'promedio': round(promedio, 1),
+            'total_calificaciones': result['total_calificaciones'],
+            'estrellas_completas': int(promedio),
+            'tiene_media_estrella': (promedio % 1) >= 0.5
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo calificación: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/get_rating_details/<int:user_id>', methods=['GET'])
+def get_rating_details(user_id):
+    """Obtiene el desglose detallado de calificaciones"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Contar calificaciones por puntuación
+        query_distribucion = """
+            SELECT 
+                Puntuacion,
+                COUNT(*) as cantidad
+            FROM Calificacion
+            WHERE ID_Usuario_Receptor = %s
+            GROUP BY Puntuacion
+            ORDER BY Puntuacion DESC
+        """
+        cursor.execute(query_distribucion, (user_id,))
+        desglose = cursor.fetchall()
+        
+        # Obtener últimas calificaciones con comentarios
+        query_comentarios = """
+            SELECT 
+                c.Puntuacion,
+                c.Comentario,
+                c.Fecha,
+                CONCAT(u.Nombre, ' ', u.Apellido) as nombre_emisor,
+                u.URL_Foto as foto_emisor,
+                u.Rol as rol_emisor
+            FROM Calificacion c
+            JOIN Usuario u ON c.ID_Usuario_Emisor = u.ID_Usuario
+            WHERE c.ID_Usuario_Receptor = %s
+            AND c.Comentario IS NOT NULL
+            AND c.Comentario != ''
+            ORDER BY c.Fecha DESC
+            LIMIT 10
+        """
+        cursor.execute(query_comentarios, (user_id,))
+        comentarios_recientes = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+        
+        # Crear estructura de desglose completa (1-5 estrellas)
+        desglose_completo = {str(i): 0 for i in range(1, 6)}
+        for item in desglose:
+            desglose_completo[item['Puntuacion']] = item['cantidad']
+        
+        return jsonify({
+            'success': True,
+            'desglose': desglose_completo,
+            'comentarios_recientes': comentarios_recientes
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo detalles: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ================================================================
+# SISTEMA DE NOTIFICACIONES - ENDPOINTS
+# ================================================================
+
+@app.route('/api/get_notifications', methods=['GET'])
+def get_notifications():
+    """Genera notificaciones dinámicas basadas en actividad reciente"""
+    
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'No autenticado'}), 401
+    
+    user_id = session['user_id']
+    user_rol = session.get('user_role')
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        notificaciones = []
+        
+        # ====== NOTIFICACIONES PARA TRABAJADORES ======
+        if user_rol == 'Trabajador':
+            
+            # 1. Postulaciones aceptadas (últimos 7 días)
+            query_aceptadas = """
+                SELECT 
+                    p.ID_Postulacion,
+                    p.Fecha_Postulacion,
+                    o.Titulo as titulo_trabajo,
+                    CONCAT(u.Nombre, ' ', u.Apellido) as nombre_agricultor
+                FROM Postulacion p
+                JOIN Oferta_Trabajo o ON p.ID_Oferta = o.ID_Oferta
+                JOIN Usuario u ON o.ID_Agricultor = u.ID_Usuario
+                WHERE p.ID_Trabajador = %s
+                AND p.Estado = 'Aceptada'
+                AND p.Fecha_Postulacion >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY p.Fecha_Postulacion DESC
+                LIMIT 5
+            """
+            cursor.execute(query_aceptadas, (user_id,))
+            aceptadas = cursor.fetchall()
+            
+            for item in aceptadas:
+                notificaciones.append({
+                    'id': f"postulacion_{item['ID_Postulacion']}",
+                    'tipo': 'aceptada',
+                    'titulo': '✅ Postulación Aceptada',
+                    'mensaje': f"Tu postulación para '{item['titulo_trabajo']}' fue aceptada por {item['nombre_agricultor']}",
+                    'fecha': item['Fecha_Postulacion'].isoformat() if item['Fecha_Postulacion'] else None,
+                    'icono': 'fa-check-circle',
+                    'color': '#28a745',
+                    'leida': False
+                })
+            
+            # 2. Postulaciones rechazadas (últimos 7 días)
+            query_rechazadas = """
+                SELECT 
+                    p.ID_Postulacion,
+                    p.Fecha_Postulacion,
+                    o.Titulo as titulo_trabajo
+                FROM Postulacion p
+                JOIN Oferta_Trabajo o ON p.ID_Oferta = o.ID_Oferta
+                WHERE p.ID_Trabajador = %s
+                AND p.Estado = 'Rechazada'
+                AND p.Fecha_Postulacion >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY p.Fecha_Postulacion DESC
+                LIMIT 3
+            """
+            cursor.execute(query_rechazadas, (user_id,))
+            rechazadas = cursor.fetchall()
+            
+            for item in rechazadas:
+                notificaciones.append({
+                    'id': f"rechazo_{item['ID_Postulacion']}",
+                    'tipo': 'rechazada',
+                    'titulo': '❌ Postulación Rechazada',
+                    'mensaje': f"Tu postulación para '{item['titulo_trabajo']}' no fue aceptada",
+                    'fecha': item['Fecha_Postulacion'].isoformat() if item['Fecha_Postulacion'] else None,
+                    'icono': 'fa-times-circle',
+                    'color': '#dc3545',
+                    'leida': False
+                })
+            
+            # 3. Nuevas ofertas recomendadas (últimas 3)
+            query_nuevas_ofertas = """
+                SELECT 
+                    o.ID_Oferta,
+                    o.Titulo,
+                    o.Pago_Ofrecido,
+                    o.Fecha_Publicacion,
+                    CONCAT(u.Nombre, ' ', u.Apellido) as nombre_agricultor
+                FROM Oferta_Trabajo o
+                JOIN Usuario u ON o.ID_Agricultor = u.ID_Usuario
+                WHERE o.Estado = 'Abierta'
+                AND o.Fecha_Publicacion >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+                AND NOT EXISTS (
+                    SELECT 1 FROM Postulacion p 
+                    WHERE p.ID_Oferta = o.ID_Oferta 
+                    AND p.ID_Trabajador = %s
+                )
+                ORDER BY o.Fecha_Publicacion DESC
+                LIMIT 3
+            """
+            cursor.execute(query_nuevas_ofertas, (user_id,))
+            nuevas_ofertas = cursor.fetchall()
+            
+            for oferta in nuevas_ofertas:
+                notificaciones.append({
+                    'id': f"nueva_oferta_{oferta['ID_Oferta']}",
+                    'tipo': 'nueva_oferta',
+                    'titulo': '💼 Nuevo Trabajo Disponible',
+                    'mensaje': f"Nueva oferta: '{oferta['Titulo']}' - ${oferta['Pago_Ofrecido']:,.0f}/día",
+                    'fecha': oferta['Fecha_Publicacion'].isoformat() if oferta['Fecha_Publicacion'] else None,
+                    'icono': 'fa-briefcase',
+                    'color': '#007bff',
+                    'leida': False,
+                    'link': f"/vista/index-trabajador.html?highlight={oferta['ID_Oferta']}"
+                })
+            
+            # 4. Recordatorio de calificaciones pendientes
+            query_calificaciones_pendientes = """
+                SELECT COUNT(*) as pendientes
+                FROM Acuerdo_Laboral al
+                WHERE al.ID_Trabajador = %s
+                AND al.Estado = 'Finalizado'
+                AND NOT EXISTS (
+                    SELECT 1 FROM Calificacion c 
+                    WHERE c.ID_Acuerdo = al.ID_Acuerdo 
+                    AND c.ID_Usuario_Emisor = %s
+                )
+            """
+            cursor.execute(query_calificaciones_pendientes, (user_id, user_id))
+            pendientes = cursor.fetchone()
+            
+            if pendientes and pendientes['pendientes'] > 0:
+                notificaciones.append({
+                    'id': 'calificaciones_pendientes',
+                    'tipo': 'recordatorio',
+                    'titulo': '⭐ Calificaciones Pendientes',
+                    'mensaje': f"Tienes {pendientes['pendientes']} {'empleador' if pendientes['pendientes'] == 1 else 'empleadores'} por calificar",
+                    'fecha': datetime.now().isoformat(),
+                    'icono': 'fa-star',
+                    'color': '#ffc107',
+                    'leida': False,
+                    'link': '/vista/perfil-trabajador.html?tab=ratings'
+                })
+        
+        # ====== NOTIFICACIONES PARA AGRICULTORES ======
+        elif user_rol == 'Agricultor':
+            
+            # 1. Nuevas postulaciones (últimos 7 días)
+            query_nuevas_postulaciones = """
+                SELECT 
+                    p.ID_Postulacion,
+                    p.Fecha_Postulacion,
+                    o.Titulo as titulo_trabajo,
+                    CONCAT(u.Nombre, ' ', u.Apellido) as nombre_trabajador
+                FROM Postulacion p
+                JOIN Oferta_Trabajo o ON p.ID_Oferta = o.ID_Oferta
+                JOIN Usuario u ON p.ID_Trabajador = u.ID_Usuario
+                WHERE o.ID_Agricultor = %s
+                AND p.Estado = 'Pendiente'
+                AND p.Fecha_Postulacion >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY p.Fecha_Postulacion DESC
+                LIMIT 5
+            """
+            cursor.execute(query_nuevas_postulaciones, (user_id,))
+            nuevas_postulaciones = cursor.fetchall()
+            
+            for item in nuevas_postulaciones:
+                notificaciones.append({
+                    'id': f"nueva_postulacion_{item['ID_Postulacion']}",
+                    'tipo': 'nueva_postulacion',
+                    'titulo': '👤 Nueva Postulación',
+                    'mensaje': f"{item['nombre_trabajador']} se postuló a '{item['titulo_trabajo']}'",
+                    'fecha': item['Fecha_Postulacion'].isoformat() if item['Fecha_Postulacion'] else None,
+                    'icono': 'fa-user-plus',
+                    'color': '#17a2b8',
+                    'leida': False,
+                    'link': f"/vista/postulaciones-agricultor.html?oferta={item['ID_Postulacion']}"
+                })
+            
+            # 2. Ofertas próximas a cerrar
+            query_ofertas_cerrar = """
+                SELECT 
+                    o.ID_Oferta,
+                    o.Titulo,
+                    o.Fecha_Publicacion,
+                    DATEDIFF(DATE_ADD(o.Fecha_Publicacion, INTERVAL 30 DAY), NOW()) as dias_restantes
+                FROM Oferta_Trabajo o
+                WHERE o.ID_Agricultor = %s
+                AND o.Estado = 'Abierta'
+                AND DATEDIFF(DATE_ADD(o.Fecha_Publicacion, INTERVAL 30 DAY), NOW()) <= 3
+                AND DATEDIFF(DATE_ADD(o.Fecha_Publicacion, INTERVAL 30 DAY), NOW()) > 0
+                ORDER BY dias_restantes ASC
+                LIMIT 3
+            """
+            cursor.execute(query_ofertas_cerrar, (user_id,))
+            ofertas_cerrar = cursor.fetchall()
+            
+            for oferta in ofertas_cerrar:
+                notificaciones.append({
+                    'id': f"oferta_cerrar_{oferta['ID_Oferta']}",
+                    'tipo': 'recordatorio',
+                    'titulo': '⏰ Oferta por Vencer',
+                    'mensaje': f"'{oferta['Titulo']}' vence en {oferta['dias_restantes']} {'día' if oferta['dias_restantes'] == 1 else 'días'}",
+                    'fecha': datetime.now().isoformat(),
+                    'icono': 'fa-clock',
+                    'color': '#fd7e14',
+                    'leida': False
+                })
+        
+        cursor.close()
+        conn.close()
+        
+        # Ordenar por fecha (más recientes primero)
+        notificaciones.sort(key=lambda x: x.get('fecha', ''), reverse=True)
+        
+        # Limitar a 10 notificaciones
+        notificaciones = notificaciones[:10]
+        
+        return jsonify({
+            'success': True,
+            'notificaciones': notificaciones,
+            'total': len(notificaciones),
+            'no_leidas': len([n for n in notificaciones if not n.get('leida', True)])
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo notificaciones: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/mark_notification_read', methods=['POST'])
+def mark_notification_read():
+    """Marca una notificación como leída (opcional, para futuro)"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'No autenticado'}), 401
+    
+    data = request.get_json()
+    notification_id = data.get('notification_id')
+    
+    # Por ahora solo retornamos éxito
+    # En el futuro podrías guardar las notificaciones leídas en una tabla
+    
+    return jsonify({
+        'success': True,
+        'message': 'Notificación marcada como leída'
+    })
+
+
+print("✅ Endpoints de calificaciones y notificaciones cargados correctamente")
+
 
 # ================================================================.
 # INICIO DEL SERVIDOR   

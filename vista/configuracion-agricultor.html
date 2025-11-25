@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="page_title">Configuración - AgroMatch</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assent/css/configuracion-trabajador.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="../assent/img/logo-Agro.png" alt="AgroMatch Logo" style="height:50px;">
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar profile-photo">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name" id="userName">Cargando...</span>
+                        <span class="user-role" data-i18n="user_role">Agricultor</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="settings-container">
+                <!-- Breadcrumb -->
+                <div class="breadcrumb">
+                    <a href="index-agricultor.html"><i class="fas fa-home"></i> <span data-i18n="breadcrumb_home">Dashboard</span></a>
+                    <span><i class="fas fa-chevron-right"></i></span>
+                    <span data-i18n="breadcrumb_config">Configuración</span>
+                </div>
+
+                <h1 class="page-title">
+                    <i class="fas fa-cog"></i>
+                    <span data-i18n="main_title">Configuración de Cuenta</span>
+                </h1>
+
+                <!-- Settings Sections -->
+                <div class="settings-sections">
+                    
+                    <!-- Cambiar Idioma -->
+                    <section class="settings-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-language"></i> <span data-i18n="language_title">Cambiar Idioma</span></h2>
+                            <p data-i18n="language_desc">Selecciona tu idioma preferido para la plataforma</p>
+                        </div>
+                        <form class="settings-form" id="languageForm">
+                            <div class="language-options">
+                                <div class="language-card" data-lang="es">
+                                    <div class="language-flag">🇪🇸</div>
+                                    <div class="language-name">Español</div>
+                                    <div class="language-check"><i class="fas fa-check-circle"></i></div>
+                                </div>
+                                <div class="language-card" data-lang="en">
+                                    <div class="language-flag">🇺🇸</div>
+                                    <div class="language-name">English</div>
+                                    <div class="language-check"><i class="fas fa-check-circle"></i></div>
+                                </div>
+                                <div class="language-card" data-lang="zh">
+                                    <div class="language-flag">🇨🇳</div>
+                                    <div class="language-name">中文</div>
+                                    <div class="language-check"><i class="fas fa-check-circle"></i></div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i>
+                                <span data-i18n="save_language">Guardar Idioma</span>
+                            </button>
+                        </form>
+                    </section>
+
+                    <!-- Cambiar Contraseña -->
+                    <section class="settings-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-key"></i> <span data-i18n="password_title">Cambiar Contraseña</span></h2>
+                            <p data-i18n="password_desc">Actualiza tu contraseña para mantener tu cuenta segura</p>
+                        </div>
+                        <form class="settings-form" id="changePasswordForm">
+                            <div class="form-group">
+                                <label data-i18n="current_password">Contraseña Actual</label>
+                                <div class="password-input">
+                                    <input type="password" id="currentPassword" required>
+                                    <button type="button" class="toggle-password" onclick="togglePassword('currentPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="new_password">Nueva Contraseña</label>
+                                <div class="password-input">
+                                    <input type="password" id="newPassword" minlength="8" required>
+                                    <button type="button" class="toggle-password" onclick="togglePassword('newPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="confirm_password">Confirmar Nueva Contraseña</label>
+                                <div class="password-input">
+                                    <input type="password" id="confirmPassword" minlength="8" required>
+                                    <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i>
+                                <span data-i18n="change_password">Cambiar Contraseña</span>
+                            </button>
+                        </form>
+                    </section>
+
+                    <!-- Eliminar Cuenta -->
+                    <section class="settings-section danger-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-trash-alt"></i> <span data-i18n="delete_account_title">Eliminar Cuenta</span></h2>
+                            <p class="danger-text" data-i18n="delete_warning">Esta acción no se puede deshacer. Se eliminarán todos tus datos permanentemente.</p>
+                        </div>
+                        <div class="danger-zone">
+                            <div class="danger-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div>
+                                    <h4 data-i18n="delete_confirm_title">¿Estás seguro?</h4>
+                                    <p data-i18n="delete_lose_text">Al eliminar tu cuenta se perderán:</p>
+                                    <ul>
+                                        <li data-i18n="delete_item1">Tu perfil y datos de finca</li>
+                                        <li data-i18n="delete_item2">Todas las ofertas publicadas</li>
+                                        <li data-i18n="delete_item3">Historial de contrataciones</li>
+                                        <li data-i18n="delete_item4">Mensajes y comunicaciones</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="delete-options">
+                                <button type="button" class="btn-danger" onclick="showDeleteConfirmation()">
+                                    <i class="fas fa-trash-alt"></i>
+                                    <span data-i18n="delete_with_password">Eliminar con contraseña</span>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Eliminación -->
+    <div id="deleteAccountModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content danger-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> <span data-i18n="delete_account_modal">Eliminar Cuenta</span></h3>
+                <button class="modal-close" onclick="hideDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p data-i18n="delete_enter_password">Para confirmar la eliminación, escribe tu contraseña:</p>
+                <div class="form-group">
+                    <input type="password" id="deletePassword" data-i18n-placeholder="current_password" placeholder="Contraseña actual" required>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="confirmDelete" required>
+                        <span class="checkmark"></span>
+                        <span data-i18n="delete_understand">Entiendo que esta acción no se puede deshacer</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideDeleteModal()" data-i18n="cancel">Cancelar</button>
+                <button class="btn-danger" onclick="deleteAccount()">
+                    <i class="fas fa-trash-alt"></i>
+                    <span data-i18n="delete_permanently">Eliminar Cuenta Permanentemente</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/configuracion-agricultor.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserProfilePhoto();
+        });
+
+        function loadUserProfilePhoto() {
+            fetch('/get_user_session')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.user) {
+                        const photoUrl = data.user.url_foto;
+                        const profileElements = document.querySelectorAll('.profile-photo, .user-avatar');
+                        
+                        profileElements.forEach(element => {
+                            if (photoUrl && photoUrl !== '' && photoUrl !== null) {
+                                element.style.backgroundImage = `url('${photoUrl}')`;
+                                element.style.backgroundSize = 'cover';
+                                element.style.backgroundPosition = 'center';
+                                element.style.borderRadius = '50%';
+                                element.innerHTML = '';
+                            } else {
+                                element.innerHTML = '<i class="fas fa-user"></i>';
+                                element.style.backgroundImage = 'none';
+                            }
+                        });
+
+                        const nameElement = document.getElementById('userName');
+                        if (nameElement && data.user.full_name) {
+                            nameElement.textContent = data.user.full_name;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando foto de perfil:', error);
+                });
+        }
+    </script>
+</body>
+</html>

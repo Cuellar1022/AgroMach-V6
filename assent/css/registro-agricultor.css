@@ -88,7 +88,7 @@ body {
     /* Fondo complejo con gradiente oscuro y imagen */
     background: 
         linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)),
-        url('../img/fondo-agro2.jpg');
+        url('../img/img11.jpg');
     background-size: cover;           /* Cubre toda la pantalla */
     background-position: center;      /* Centra la imagen */
     background-attachment: fixed;     /* Fondo fijo al hacer scroll */

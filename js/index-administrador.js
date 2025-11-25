@@ -3389,3 +3389,756 @@ console.log('   • Generación de reportes personalizados');
 console.log('   • Exportación de datos en múltiples formatos');
 console.log('   • Métricas en tiempo real');
 console.log('   • Análisis de rendimiento del sistema');
+
+// ================================================================
+// SISTEMA DE REPORTES DE USUARIOS - ADMINISTRADOR
+// Agregar estas funciones AL FINAL de index-administrador.js
+// ================================================================
+
+// ================================================================
+// CARGAR REPORTES DE USUARIOS
+// ================================================================
+async function loadReportesUsuarios() {
+    try {
+        console.log('📢 Cargando reportes de usuarios...');
+        
+        const estadoFilter = document.getElementById('filtroEstadoReportes')?.value || 'Pendiente';
+        
+        const response = await fetch(`/api/admin/reportes-pendientes?estado=${estadoFilter}`, {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayReportesUsuarios(data.reportes, data.estadisticas);
+            
+            // Actualizar contador en el menú
+            const reportesCount = document.getElementById('reportes-count');
+            if (reportesCount) {
+                reportesCount.textContent = data.estadisticas.pendientes;
+                reportesCount.style.display = data.estadisticas.pendientes > 0 ? 'inline-block' : 'none';
+            }
+        } else {
+            showNotification(data.message || 'Error cargando reportes', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando reportes:', error);
+        showNotification('Error de conexión al cargar reportes', 'error');
+    }
+}
+
+function displayReportesUsuarios(reportes, estadisticas) {
+    const container = document.getElementById('reportesUsuariosContainer');
+    if (!container) return;
+    
+    // Actualizar estadísticas
+    updateCounterWithAnimation('reportesPendientes', estadisticas.pendientes);
+    updateCounterWithAnimation('reportesRevisados', estadisticas.revisados);
+    updateCounterWithAnimation('reportesResueltos', estadisticas.resueltos);
+    updateCounterWithAnimation('reportesTotal', estadisticas.total_reportes);
+    
+    if (!reportes || reportes.length === 0) {
+        container.innerHTML = `
+            <div class="no-reports">
+                <i class="fas fa-check-circle"></i>
+                <h3>No hay reportes en este estado</h3>
+                <p>¡Excelente! Todos los reportes han sido gestionados.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="reportes-list">';
+    
+    reportes.forEach(reporte => {
+        const prioridadClass = reporte.prioridad === 'high' ? 'report-priority-high' : 
+                               reporte.prioridad === 'medium' ? 'report-priority-medium' : 
+                               'report-priority-low';
+        
+        const prioridadText = reporte.prioridad === 'high' ? 'Alta' : 
+                             reporte.prioridad === 'medium' ? 'Media' : 
+                             'Baja';
+        
+        html += `
+            <div class="report-item">
+                <div class="report-header">
+                    <div class="report-title">
+                        <i class="fas fa-flag"></i>
+                        <h4>Reporte #${reporte.id_reporte}</h4>
+                        <span class="report-priority ${prioridadClass}">${prioridadText}</span>
+                        <span class="report-status ${reporte.estado.toLowerCase()}">${reporte.estado}</span>
+                    </div>
+                    <span class="report-time">${reporte.tiempo_transcurrido}</span>
+                </div>
+                
+                <div class="report-body">
+                    <div class="report-section">
+                        <div class="report-user">
+                            <strong>Reportado por:</strong>
+                            <span>${reporte.reportante.nombre}</span>
+                            <small>(${reporte.reportante.rol})</small>
+                        </div>
+                        <div class="report-user">
+                            <strong>Usuario reportado:</strong>
+                            <span>${reporte.reportado.nombre}</span>
+                            <small>(${reporte.reportado.rol} - ${reporte.reportado.estado})</small>
+                        </div>
+                    </div>
+                    
+                    <div class="report-motivo">
+                        <strong><i class="fas fa-comment-dots"></i> Motivo:</strong>
+                        <p>${reporte.motivo}</p>
+                    </div>
+                </div>
+                
+                <div class="report-actions">
+                    <button class="btn btn-sm btn-info" onclick="viewUser(${reporte.reportado.id})">
+                        <i class="fas fa-eye"></i> Ver Usuario Reportado
+                    </button>
+                    ${reporte.estado === 'Pendiente' ? `
+                        <button class="btn btn-sm btn-primary" onclick="marcarReporteRevisado(${reporte.id_reporte})">
+                            <i class="fas fa-check"></i> Marcar Revisado
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="resolverReporte(${reporte.id_reporte})">
+                            <i class="fas fa-check-circle"></i> Resolver
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="bloquearUsuarioReportado(${reporte.id_reporte}, ${reporte.reportado.id}, '${reporte.reportado.nombre}')">
+                            <i class="fas fa-ban"></i> Bloquear Usuario
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="descartarReporte(${reporte.id_reporte})">
+                            <i class="fas fa-times"></i> Descartar
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// ================================================================
+// MOSTRAR REPORTES EN MODAL (Quick Access desde Dashboard)
+// ================================================================
+async function showPendingReports() {
+    try {
+        console.log('📢 Mostrando reportes pendientes en modal...');
+        showLoading('Cargando reportes pendientes...');
+        
+        const response = await fetch('/api/admin/reportes-pendientes?estado=Pendiente', {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            mostrarModalReportes(data.reportes, data.estadisticas);
+        } else {
+            showNotification(data.message || 'Error cargando reportes', 'error');
+        }
+        
+    } catch (error) {
+        hideLoading();
+        console.error('Error cargando reportes:', error);
+        showNotification('Error de conexión al cargar reportes', 'error');
+    }
+}
+
+function mostrarModalReportes(reportes, estadisticas) {
+    let content = `
+        <div class="reportes-container">
+            <!-- Estadísticas Mini -->
+            <div class="reportes-stats">
+                <div class="stat-card-mini">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <h4>${estadisticas.pendientes}</h4>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <i class="fas fa-eye"></i>
+                    <div>
+                        <h4>${estadisticas.revisados}</h4>
+                        <p>Revisados</p>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <h4>${estadisticas.resueltos}</h4>
+                        <p>Resueltos</p>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <i class="fas fa-list"></i>
+                    <div>
+                        <h4>${estadisticas.total_reportes}</h4>
+                        <p>Total</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botón para ir a la sección completa -->
+            <div style="text-align: center; margin: 1rem 0;">
+                <button class="btn btn-primary" onclick="closeModal(); showSection('reportes-usuarios');">
+                    <i class="fas fa-arrow-right"></i> Ver Todos los Reportes
+                </button>
+            </div>
+            
+            <hr style="margin: 1.5rem 0; border: none; border-top: 2px solid #e2e8f0;">
+            
+            <!-- Lista de Reportes -->
+            <div class="reportes-list-modal" style="max-height: 400px; overflow-y: auto;">
+    `;
+    
+    if (reportes && reportes.length > 0) {
+        reportes.forEach(reporte => {
+            const prioridadClass = reporte.prioridad === 'high' ? 'report-priority-high' : 
+                                   reporte.prioridad === 'medium' ? 'report-priority-medium' : 
+                                   'report-priority-low';
+            
+            const prioridadText = reporte.prioridad === 'high' ? 'Alta' : 
+                                 reporte.prioridad === 'medium' ? 'Media' : 
+                                 'Baja';
+            
+            content += `
+                <div class="report-item-compact">
+                    <div class="report-header-compact">
+                        <div>
+                            <i class="fas fa-flag" style="color: #dc3545; margin-right: 8px;"></i>
+                            <strong>Reporte #${reporte.id_reporte}</strong>
+                            <span class="report-priority ${prioridadClass}" style="margin-left: 8px;">${prioridadText}</span>
+                        </div>
+                        <span class="report-time" style="font-size: 0.85rem; color: #718096;">${reporte.tiempo_transcurrido}</span>
+                    </div>
+                    
+                    <div style="margin: 0.75rem 0; padding: 0.75rem; background: #f7fafc; border-radius: 8px;">
+                        <div style="margin-bottom: 0.5rem;">
+                            <strong style="color: #4a5568;">Reportante:</strong> ${reporte.reportante.nombre} (${reporte.reportante.rol})
+                        </div>
+                        <div>
+                            <strong style="color: #4a5568;">Reportado:</strong> ${reporte.reportado.nombre} (${reporte.reportado.rol})
+                        </div>
+                    </div>
+                    
+                    <div style="background: #fff5f5; padding: 0.75rem; border-radius: 8px; border-left: 3px solid #dc3545;">
+                        <strong style="color: #dc3545; display: block; margin-bottom: 0.5rem;">
+                            <i class="fas fa-comment-dots"></i> Motivo:
+                        </strong>
+                        <p style="margin: 0; color: #4a5568; font-size: 0.9rem;">${reporte.motivo.substring(0, 100)}${reporte.motivo.length > 100 ? '...' : ''}</p>
+                    </div>
+                    
+                    <div class="report-actions-compact" style="margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-sm btn-info" onclick="closeModal(); viewUser(${reporte.reportado.id})">
+                            <i class="fas fa-eye"></i> Ver Usuario
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="marcarReporteRevisado(${reporte.id_reporte})">
+                            <i class="fas fa-check"></i> Revisar
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="resolverReporte(${reporte.id_reporte})">
+                            <i class="fas fa-check-circle"></i> Resolver
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="bloquearUsuarioReportado(${reporte.id_reporte}, ${reporte.reportado.id}, '${reporte.reportado.nombre}')">
+                            <i class="fas fa-ban"></i> Bloquear
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        content += `
+            <div class="no-reports">
+                <i class="fas fa-check-circle"></i>
+                <h3>No hay reportes pendientes</h3>
+                <p>¡Excelente! Todos los reportes han sido gestionados.</p>
+            </div>
+        `;
+    }
+    
+    content += `
+            </div>
+        </div>
+    `;
+    
+    showModal('Reportes Pendientes', content);
+}
+
+// ================================================================
+// ACCIONES SOBRE REPORTES
+// ================================================================
+async function marcarReporteRevisado(reporteId) {
+    try {
+        const confirmed = await showConfirmDialog(
+            'Marcar como Revisado',
+            '¿Marcar este reporte como revisado?',
+            'info'
+        );
+        
+        if (!confirmed) return;
+        
+        showLoading('Actualizando reporte...');
+        
+        const response = await fetch(`/api/admin/reporte/${reporteId}/accion`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ accion: 'revisar' })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            loadReportesUsuarios();
+            closeModal();
+        } else {
+            showNotification(data.message, 'error');
+        }
+        
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showNotification('Error al actualizar reporte', 'error');
+    }
+}
+
+async function resolverReporte(reporteId) {
+    try {
+        const confirmed = await showConfirmDialog(
+            'Resolver Reporte',
+            '¿Marcar este reporte como resuelto?',
+            'success'
+        );
+        
+        if (!confirmed) return;
+        
+        showLoading('Resolviendo reporte...');
+        
+        const response = await fetch(`/api/admin/reporte/${reporteId}/accion`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ accion: 'resolver' })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            loadReportesUsuarios();
+            closeModal();
+        } else {
+            showNotification(data.message, 'error');
+        }
+        
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showNotification('Error al resolver reporte', 'error');
+    }
+}
+
+async function bloquearUsuarioReportado(reporteId, usuarioId, nombreUsuario) {
+    try {
+        const confirmed = await showConfirmDialog(
+            'Bloquear Usuario',
+            `¿Estás seguro de bloquear a ${nombreUsuario}? Esta acción desactivará su cuenta y resolverá el reporte.`,
+            'danger'
+        );
+        
+        if (!confirmed) return;
+        
+        showLoading('Bloqueando usuario...');
+        
+        const response = await fetch(`/api/admin/reporte/${reporteId}/accion`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ accion: 'bloquear_usuario' })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            loadReportesUsuarios();
+            closeModal();
+        } else {
+            showNotification(data.message, 'error');
+        }
+        
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showNotification('Error al bloquear usuario', 'error');
+    }
+}
+
+async function descartarReporte(reporteId) {
+    try {
+        const confirmed = await showConfirmDialog(
+            'Descartar Reporte',
+            '¿Descartar este reporte? El reporte se marcará como resuelto sin acción.',
+            'warning'
+        );
+        
+        if (!confirmed) return;
+        
+        showLoading('Descartando reporte...');
+        
+        const response = await fetch(`/api/admin/reporte/${reporteId}/accion`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ accion: 'descartar' })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (data.success) {
+            showNotification(data.message, 'info');
+            loadReportesUsuarios();
+            closeModal();
+        } else {
+            showNotification(data.message, 'error');
+        }
+        
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showNotification('Error al descartar reporte', 'error');
+    }
+}
+
+// ================================================================
+// CSS ADICIONAL PARA REPORTES
+// ================================================================
+const reportesStyles = `
+    .badge-count {
+        background: #dc3545;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 8px;
+        display: none;
+    }
+    
+    .reportes-container {
+        padding: 1rem 0;
+    }
+    
+    .reportes-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card-mini {
+        background: linear-gradient(135deg, #f7fafc, #edf2f7);
+        padding: 1rem;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border-left: 4px solid #4a7c59;
+    }
+    
+    .stat-card-mini i {
+        font-size: 2rem;
+        color: #4a7c59;
+    }
+    
+    .stat-card-mini h4 {
+        margin: 0;
+        font-size: 1.8rem;
+        color: #2d3748;
+    }
+    
+    .stat-card-mini p {
+        margin: 0;
+        color: #718096;
+        font-size: 0.9rem;
+    }
+    
+    .reportes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .report-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .report-item:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .report-item-compact {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .report-header,
+    .report-header-compact {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f7fafc;
+    }
+    
+    .report-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .report-title i {
+        color: #dc3545;
+        font-size: 1.2rem;
+    }
+    
+    .report-title h4 {
+        margin: 0;
+        color: #2d3748;
+    }
+    
+    .report-priority {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .report-priority-high {
+        background: #fee;
+        color: #dc3545;
+    }
+    
+    .report-priority-medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .report-priority-low {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .report-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .report-status.pendiente {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .report-status.revisado {
+        background: #cce5ff;
+        color: #004085;
+    }
+    
+    .report-status.resuelto {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .report-time {
+        color: #718096;
+        font-size: 0.85rem;
+    }
+    
+    .report-body {
+        margin: 1rem 0;
+    }
+    
+    .report-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .report-user {
+        background: #f7fafc;
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+    
+    .report-user strong {
+        display: block;
+        color: #4a5568;
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .report-user span {
+        color: #2d3748;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+    
+    .report-user small {
+        color: #718096;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+    }
+    
+    .report-motivo {
+        background: #fff5f5;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .report-motivo strong {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #dc3545;
+        margin-bottom: 0.5rem;
+    }
+    
+    .report-motivo p {
+        margin: 0;
+        color: #4a5568;
+        line-height: 1.6;
+    }
+    
+    .report-actions,
+    .report-actions-compact {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .report-actions .btn,
+    .report-actions-compact .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .no-reports {
+        text-align: center;
+        padding: 3rem;
+        color: #718096;
+    }
+    
+    .no-reports i {
+        font-size: 4rem;
+        color: #48bb78;
+        margin-bottom: 1rem;
+    }
+    
+    .no-reports h3 {
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .reportes-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .report-section {
+            grid-template-columns: 1fr;
+        }
+        
+        .report-actions,
+        .report-actions-compact {
+            flex-direction: column;
+        }
+        
+        .report-actions .btn,
+        .report-actions-compact .btn {
+            width: 100%;
+        }
+    }
+`;
+
+// Inyectar estilos
+if (!document.getElementById('reportes-styles')) {
+    const styleSheet = document.createElement('style');
+    styleSheet.id = 'reportes-styles';
+    styleSheet.textContent = reportesStyles;
+    document.head.appendChild(styleSheet);
+}
+
+// ================================================================
+// INTEGRAR CON SISTEMA DE NAVEGACIÓN EXISTENTE
+// ================================================================
+const originalShowSectionReportes = window.showSection;
+window.showSection = async function(sectionName) {
+    if (originalShowSectionReportes) {
+        await originalShowSectionReportes(sectionName);
+    }
+    
+    // Cargar reportes cuando se accede a la sección
+    if (sectionName === 'reportes-usuarios') {
+        await loadReportesUsuarios();
+    }
+};
+
+// Cargar reportes automáticamente al iniciar si estamos en esa sección
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar contador de reportes pendientes cada 30 segundos
+    setInterval(async () => {
+        try {
+            const response = await fetch('/api/admin/reportes-pendientes?estado=Pendiente', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                const reportesCount = document.getElementById('reportes-count');
+                if (reportesCount) {
+                    reportesCount.textContent = data.estadisticas.pendientes;
+                    reportesCount.style.display = data.estadisticas.pendientes > 0 ? 'inline-block' : 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error actualizando contador de reportes:', error);
+        }
+    }, 30000); // Cada 30 segundos
+});
+
+console.log('✅ Sistema de reportes de usuarios cargado correctamente');
+console.log('📋 Funcionalidades disponibles:');
+console.log('   • Ver reportes pendientes, revisados y resueltos');
+console.log('   • Marcar reportes como revisados');
+console.log('   • Resolver reportes');
+console.log('   • Bloquear usuarios reportados');
+console.log('   • Descartar reportes');
+console.log('   • Ver perfil del usuario reportado');
+console.log('   • Contador automático de reportes pendientes');

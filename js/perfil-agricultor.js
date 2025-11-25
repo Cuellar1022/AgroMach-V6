@@ -1199,3 +1199,71 @@ window.uploadDocument = uploadDocument;
 window.exportarPerfilPDF = exportarPerfilPDF;
 
 console.log('✅ Sistema de perfil agricultor COMPLETAMENTE FUSIONADO y cargado');
+
+// Función para ver documentos
+window.viewDocument = function(docType) {
+    // Buscar el documento en la lista cargada
+    const filesList = document.getElementById('filesList');
+    const docItems = filesList.querySelectorAll('.document-item');
+    
+    let documentUrl = null;
+    docItems.forEach(item => {
+        const type = item.querySelector('.document-type')?.textContent;
+        if (type && type.includes(docType)) {
+            const fileName = item.querySelector('.document-name')?.textContent;
+            if (fileName) {
+                documentUrl = `/static/uploads/documents/${fileName}`;
+            }
+        }
+    });
+    
+    if (documentUrl) {
+        window.open(documentUrl, '_blank');
+    } else {
+        showMessage('No se encontró el documento', 'error');
+    }
+};
+
+// Modificar la función displayDocuments para mostrar botones
+function displayDocuments(documents) {
+    const container = document.getElementById('filesList');
+    if (!container) return;
+    
+    if (documents.length === 0) {
+        container.innerHTML = '<p style="color: #6c757d; text-align: center;">No hay archivos subidos aún</p>';
+        // Ocultar todos los botones de ver
+        ['viewCVBtn', 'viewCertBtn', 'viewAdditionalBtn'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.style.display = 'none';
+        });
+        return;
+    }
+    
+    let html = '';
+    documents.forEach(doc => {
+        html += `
+            <div class="document-item">
+                <div class="document-info">
+                    <div class="document-type"><i class="fas fa-file"></i> ${doc.tipo_documento}</div>
+                    <div class="document-name">${doc.nombre_archivo}</div>
+                </div>
+                <button class="btn btn-sm btn-secondary" onclick="window.open('/static/uploads/documents/${doc.nombre_archivo}', '_blank')">
+                    <i class="fas fa-eye"></i> Ver
+                </button>
+            </div>
+        `;
+        
+        // Mostrar botón de ver según el tipo
+        if (doc.tipo_documento.includes('CV')) {
+            const btn = document.getElementById('viewCVBtn');
+            if (btn) {
+                btn.style.display = 'inline-flex';
+                btn.onclick = () => window.open(`/static/uploads/documents/${doc.nombre_archivo}`, '_blank');
+            }
+        }
+        // Repite para otros tipos...
+    });
+    
+    container.innerHTML = html;
+    updateDocumentCount(documents.length);
+}

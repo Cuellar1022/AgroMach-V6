@@ -50,10 +50,11 @@
                         <span>Reportes</span>
                     </a>
                 </li>
-                <li class="nav-item" data-section="historial">
+                <li class="nav-item" data-section="reportes-usuarios">
                     <a href="#" class="nav-link">
-                        <i class="fas fa-history"></i>
-                        <span>Historial de Auditoría</span>
+                        <i class="fas fa-flag"></i>
+                        <span>Reportes de Usuarios</span>
+                        <span class="badge-count" id="reportes-count">0</span>
                     </a>
                 </li>
             </ul>
@@ -85,10 +86,6 @@
                             <i class="fas fa-search"></i>
                             <input type="text" placeholder="Buscar..." id="searchInput">
                         </div>
-                        <div class="notification-bell" onclick="toggleNotifications()">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-count">3</span>
-                        </div>
                     </div>
                 </header>
 
@@ -99,7 +96,7 @@
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stats-content">
-                            <h3 id="totalUsers">1,247</h3>
+                            <h3 id="totalUsers">0</h3>
                             <p>Usuarios Activos</p>
                             <span class="stats-change positive">+12%</span>
                         </div>
@@ -110,7 +107,7 @@
                             <i class="fas fa-briefcase"></i>
                         </div>
                         <div class="stats-content">
-                            <h3 id="activeJobs">324</h3>
+                            <h3 id="activeJobs">0</h3>
                             <p>Ofertas Activas</p>
                             <span class="stats-change positive">+8%</span>
                         </div>
@@ -121,7 +118,7 @@
                             <i class="fas fa-file-alt"></i>
                         </div>
                         <div class="stats-content">
-                            <h3 id="totalApplications">2,156</h3>
+                            <h3 id="totalApplications">0</h3>
                             <p>Postulaciones</p>
                             <span class="stats-change positive">+15%</span>
                         </div>
@@ -132,7 +129,7 @@
                             <i class="fas fa-handshake"></i>
                         </div>
                         <div class="stats-content">
-                            <h3 id="successfulHires">892</h3>
+                            <h3 id="successfulHires">0</h3>
                             <p>Contrataciones</p>
                             <span class="stats-change positive">+23%</span>
                         </div>
@@ -491,15 +488,73 @@
                 </div>
             </section>
 
-            <!-- SECCIÓN DE HISTORIAL -->
-            <section id="historial-section" class="content-section">
+            <!-- SECCIÓN DE REPORTES DE USUARIOS -->
+            <section id="reportes-usuarios-section" class="content-section">
                 <header class="content-header">
-                    <h1>Historial de Auditoría</h1>
+                    <h1><i class="fas fa-flag"></i> Reportes de Usuarios</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="loadReportesUsuarios()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                        <select id="filtroEstadoReportes" class="form-control" onchange="loadReportesUsuarios()" style="width: 200px; margin-left: 10px;">
+                            <option value="Pendiente">Pendientes</option>
+                            <option value="Revisado">Revisados</option>
+                            <option value="Resuelto">Resueltos</option>
+                        </select>
+                    </div>
                 </header>
-                <div class="coming-soon">
-                    <i class="fas fa-history"></i>
-                    <h3>Sección en desarrollo</h3>
-                    <p>El historial de auditoría estará disponible próximamente.</p>
+
+                <!-- Estadísticas de Reportes -->
+                <div class="stats-overview">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="reportesPendientes">0</h3>
+                            <p>Reportes Pendientes</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #ffc107, #ff9800);">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="reportesRevisados">0</h3>
+                            <p>Revisados</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="reportesResueltos">0</h3>
+                            <p>Resueltos</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                            <i class="fas fa-list"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3 id="reportesTotal">0</h3>
+                            <p>Total</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Reportes -->
+                <div id="reportesUsuariosContainer">
+                    <div style="text-align: center; padding: 3rem;">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Cargando...</span>
+                        </div>
+                        <p style="margin-top: 1rem;">Cargando reportes...</p>
+                    </div>
                 </div>
             </section>
         </main>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroMatch - Beneficios</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #1e3a2e;
+            --primary-medium: #4a7c59;
+            --accent-light: #90EE90;
+            --background-overlay: rgba(255, 255, 255, 0.92);
+            --glass-backdrop: rgba(255, 255, 255, 0.15);
+            --shadow-primary: rgba(30, 58, 46, 0.15);
+            --gradient-primary: linear-gradient(135deg, #4a7c59, #1e3a2e);
+            --gradient-accent: linear-gradient(135deg, #90EE90, #4a7c59);
+            --glass-border: rgba(144, 238, 144, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--primary-dark);
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(144,238,144,0.05));
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .benefits-section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 4rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: var(--glass-backdrop);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 0.7rem 1.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-medium);
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .section-description {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .benefit-card {
+            background: var(--background-overlay);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 25px;
+            border: 2px solid var(--glass-border);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(30, 58, 46, 0.1);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .benefit-card:nth-child(1) { animation-delay: 0.1s; }
+        .benefit-card:nth-child(2) { animation-delay: 0.2s; }
+        .benefit-card:nth-child(3) { animation-delay: 0.3s; }
+        .benefit-card:nth-child(4) { animation-delay: 0.4s; }
+        .benefit-card:nth-child(5) { animation-delay: 0.5s; }
+        .benefit-card:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .benefit-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-accent);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(30, 58, 46, 0.2);
+            border-color: var(--accent-light);
+        }
+
+        .benefit-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .benefit-icon-wrapper {
+            margin-bottom: 1.5rem;
+        }
+
+        .benefit-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-primary);
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            box-shadow: 0 10px 25px rgba(74, 124, 89, 0.3);
+            transition: all 0.4s ease;
+        }
+
+        .benefit-card:hover .benefit-icon {
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 15px 35px rgba(74, 124, 89, 0.5);
+        }
+
+        .benefit-card h3 {
+            color: var(--primary-dark);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        .benefit-card p {
+            color: #555;
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .benefit-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .benefit-list li {
+            padding: 0.7rem 0;
+            color: #666;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .benefit-list li:hover {
+            color: var(--primary-medium);
+            padding-left: 0.5rem;
+        }
+
+        .benefit-list li i {
+            color: var(--accent-light);
+            font-size: 1.1rem;
+            min-width: 20px;
+            margin-top: 0.2rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .benefit-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="benefits-section">
+        <div class="section-header">
+            <div class="section-tag">
+                <i class="fas fa-star"></i>
+                Beneficios
+            </div>
+            <h2 class="section-title">Qué Ganas al Usar AgroMatch</h2>
+            <p class="section-description">
+                Una plataforma diseñada para hacer tu búsqueda de empleo agrícola más eficiente y segura
+            </p>
+        </div>
+
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <div class="benefit-icon-wrapper">
+                    <div class="benefit-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+                <h3>Búsqueda Centralizada</h3>
+                <p>Encuentra todas las ofertas de empleo agrícola en un solo lugar, sin tener que visitar múltiples sitios o hacer llamadas.</p>
+                <ul class="benefit-list">
+                    <li><i class="fas fa-check-circle"></i> Ofertas verificadas y actualizadas</li>
+                    <li><i class="fas fa-check-circle"></i> Filtros por ubicación y especialidad</li>
+                    <li><i class="fas fa-check-circle"></i> Ahorra tiempo en tu búsqueda</li>
+                </ul>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-wrapper">
+                    <div class="benefit-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+                <h3>Perfil Profesional Digital</h3>
+                <p>Crea tu CV digital una sola vez y postula a múltiples empleos sin llenar formularios repetitivos.</p>
+                <ul class="benefit-list">
+                    <li><i class="fas fa-check-circle"></i> CV siempre disponible para empleadores</li>
+                    <li><i class="fas fa-check-circle"></i> Actualiza tu información fácilmente</li>
+                    <li><i class="fas fa-check-circle"></i> Destaca tu experiencia agrícola</li>
+                </ul>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-wrapper">
+                    <div class="benefit-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                </div>
+                <h3>Notificaciones de Oportunidades</h3>
+                <p>Recibe alertas cuando se publiquen empleos que coincidan con tu perfil y preferencias.</p>
+                <ul class="benefit-list">
+                    <li><i class="fas fa-check-circle"></i> Avisos por correo electrónico</li>
+                    <li><i class="fas fa-check-circle"></i> Personaliza tus preferencias</li>
+                    <li><i class="fas fa-check-circle"></i> No te pierdas ninguna oportunidad</li>
+                </ul>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-wrapper">
+                    <div class="benefit-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                </div>
+                <h3>Empresas Verificadas</h3>
+                <p>Todas las empresas que publican ofertas son verificadas para garantizar la legitimidad de las oportunidades.</p>
+                <ul class="benefit-list">
+                    <li><i class="fas fa-check-circle"></i> Proceso de verificación empresarial</li>
+                    <li><i class="fas fa-check-circle"></i> Información clara del empleador</li>
+                    <li><i class="fas fa-check-circle"></i> Mayor seguridad en tu búsqueda</li>
+                </ul>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-wrapper">
+                    <div class="benefit-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                </div>
+                <h3>Información Detallada</h3>
+                <p>Accede a descripciones completas de puestos, requisitos y condiciones antes de postular.</p>
+                <ul class="benefit-list">
+                    <li><i class="fas fa-check-circle"></i> Detalles del puesto de trabajo</li>
+                    <li><i class="fas fa-check-circle"></i> Requisitos claramente especificados</li>
+                    <li><i class="fas fa-check-circle"></i> Información de contacto disponible</li>
+                </ul>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-wrapper">
+                    <div class="benefit-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                </div>
+                <h3>Acceso desde Cualquier Lugar</h3>
+                <p>Busca y postula a empleos desde tu computadora, tablet o teléfono móvil cuando lo necesites.</p>
+                <ul class="benefit-list">
+                    <li><i class="fas fa-check-circle"></i> Plataforma responsive</li>
+                    <li><i class="fas fa-check-circle"></i> Acceso 24/7 a ofertas</li>
+                    <li><i class="fas fa-check-circle"></i> Postula en cualquier momento</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

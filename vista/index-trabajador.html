@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>AgroMatch - Dashboard Trabajador</title>
+    <title data-i18n="page_title_worker">AgroMatch - Dashboard Trabajador</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <link rel="stylesheet" href="../assent/css/index-trabajador.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -20,21 +20,21 @@
     <div class="modal" id="applyJobModal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Confirmar Postulación</h2>
+                <h2 data-i18n="confirm_application">Confirmar Postulación</h2>
                 <button class="close-btn" onclick="closeApplyModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <p>¿Estás seguro de que quieres postularte a este trabajo?</p>
+                <p data-i18n="confirm_application_text">¿Estás seguro de que quieres postularte a este trabajo?</p>
                 <div id="jobDetailsForApplication"></div>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeApplyModal()">
+                <button class="btn btn-secondary" onclick="closeApplyModal()" data-i18n="cancel">
                     Cancelar
                 </button>
                 <button class="btn btn-primary" onclick="confirmApplication()" id="confirmApplyBtn">
-                    <i class="fas fa-paper-plane"></i> Confirmar Postulación
+                    <i class="fas fa-paper-plane"></i> <span data-i18n="confirm_submit">Confirmar Postulación</span>
                 </button>
             </div>
         </div>
@@ -44,7 +44,7 @@
     <div class="modal" id="searchModal" style="display: none;">
         <div class="modal-content search-modal">
             <div class="modal-header">
-                <h2><i class="fas fa-search"></i> Búsqueda Avanzada de Trabajos</h2>
+                <h2><i class="fas fa-search"></i> <span data-i18n="advanced_search">Búsqueda Avanzada de Trabajos</span></h2>
                 <button class="close-btn" onclick="closeSearchModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -52,49 +52,49 @@
             <div class="modal-body">
                 <div class="search-form">
                     <div class="form-group">
-                        <label><i class="fas fa-map-marker-alt"></i> Por Ubicación</label>
-                        <input type="text" id="searchLocation" placeholder="Ej: Chinchiná, Caldas">
+                        <label><i class="fas fa-map-marker-alt"></i> <span data-i18n="by_location">Por Ubicación</span></label>
+                        <input type="text" id="searchLocation" data-i18n-placeholder="location_example" placeholder="Ej: Chinchiná, Caldas">
                     </div>
                     
                     <div class="form-group">
-                        <label><i class="fas fa-seedling"></i> Por Tipo de Cultivo</label>
+                        <label><i class="fas fa-seedling"></i> <span data-i18n="by_crop_type">Por Tipo de Cultivo</span></label>
                         <select id="searchCropType">
-                            <option value="">Todos los cultivos</option>
-                            <option value="cafe">Café</option>
-                            <option value="maiz">Maíz</option>
-                            <option value="platano">Plátano</option>
-                            <option value="yuca">Yuca</option>
-                            <option value="cacao">Cacao</option>
-                            <option value="frutas">Frutas</option>
+                            <option value="" data-i18n="all_crops">Todos los cultivos</option>
+                            <option value="cafe" data-i18n="coffee">Café</option>
+                            <option value="maiz" data-i18n="corn">Maíz</option>
+                            <option value="platano" data-i18n="banana">Plátano</option>
+                            <option value="yuca" data-i18n="cassava">Yuca</option>
+                            <option value="cacao" data-i18n="cacao">Cacao</option>
+                            <option value="frutas" data-i18n="fruits">Frutas</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label><i class="fas fa-dollar-sign"></i> Por Rango de Pago (COP/día)</label>
+                        <label><i class="fas fa-dollar-sign"></i> <span data-i18n="by_pay_range">Por Rango de Pago (COP/día)</span></label>
                         <div class="range-inputs">
-                            <input type="number" id="searchMinPay" placeholder="Mínimo" min="0" step="5000">
+                            <input type="number" id="searchMinPay" data-i18n-placeholder="minimum" placeholder="Mínimo" min="0" step="5000">
                             <span>-</span>
-                            <input type="number" id="searchMaxPay" placeholder="Máximo" min="0" step="5000">
+                            <input type="number" id="searchMaxPay" data-i18n-placeholder="maximum" placeholder="Máximo" min="0" step="5000">
                         </div>
                     </div>
                     
                     <div class="form-group">
-                        <label><i class="fas fa-calendar"></i> Por Disponibilidad</label>
+                        <label><i class="fas fa-calendar"></i> <span data-i18n="by_availability">Por Disponibilidad</span></label>
                         <select id="searchAvailability">
-                            <option value="">Cualquier fecha</option>
-                            <option value="inmediato">Inmediato</option>
-                            <option value="semana">Esta semana</option>
-                            <option value="mes">Este mes</option>
+                            <option value="" data-i18n="any_date">Cualquier fecha</option>
+                            <option value="inmediato" data-i18n="immediate">Inmediato</option>
+                            <option value="semana" data-i18n="this_week">Esta semana</option>
+                            <option value="mes" data-i18n="this_month">Este mes</option>
                         </select>
                     </div>
                 </div>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="clearSearchFilters()">
-                    <i class="fas fa-eraser"></i> Limpiar Filtros
+                    <i class="fas fa-eraser"></i> <span data-i18n="clear_filters">Limpiar Filtros</span>
                 </button>
                 <button class="btn btn-primary" onclick="applySearchFilters()">
-                    <i class="fas fa-search"></i> Buscar Trabajos
+                    <i class="fas fa-search"></i> <span data-i18n="search_jobs">Buscar Trabajos</span>
                 </button>
             </div>
         </div>
@@ -121,46 +121,45 @@
                 <div class="dynamic-dropdown-name" id="dropdownName">Cargando...</div>
                 <div class="dynamic-dropdown-role">
                     <i class="fas fa-seedling"></i>
-                    <span>Trabajador Agrícola</span>
+                    <span data-i18n="user_role">Trabajador Agrícola</span>
                 </div>
             </div>
             <div class="dynamic-dropdown-menu">
                 <div class="dynamic-dropdown-item" onclick="showProfile()">
                     <div class="icon"><i class="fas fa-user-circle"></i></div>
-                    <span>Ver Perfil</span>
+                    <span data-i18n="view_profile">Ver Perfil</span>
                 </div>
                 <div class="dynamic-dropdown-item" onclick="showStats()">
                     <div class="icon"><i class="fas fa-chart-bar"></i></div>
-                    <span>Mis Estadísticas</span>
+                    <span data-i18n="my_stats">Mis Estadísticas</span>
                 </div>
                 <div class="dynamic-dropdown-item" onclick="showHistorialEmpleos()">
                     <div class="icon"><i class="fas fa-history"></i></div>
-                    <span>Historial de Empleos</span>
+                    <span data-i18n="job_history">Historial de Empleos</span>
                 </div>
                 <div class="dynamic-dropdown-item" onclick="showPostulaciones()">
                     <div class="icon"><i class="fas fa-paper-plane"></i></div>
                     <span>Mis Postulaciones</span>
                 </div>
-                <!-- NUEVA OPCIÓN: Recomendaciones -->
                 <div class="dynamic-dropdown-item" onclick="showRecomendaciones()">
                     <div class="icon"><i class="fas fa-lightbulb"></i></div>
-                    <span>Recomendaciones para Ti</span>
+                    <span data-i18n="recommendations_for_you">Recomendaciones para Ti</span>
                 </div>
                 <div class="dynamic-dropdown-item" onclick="showFavoritos()">
                     <div class="icon"><i class="fas fa-heart"></i></div>
-                    <span>Mis Favoritos</span>
+                    <span data-i18n="my_favorites">Mis Favoritos</span>
                 </div>
                 <div class="dynamic-dropdown-item" onclick="showSettings()">
                     <div class="icon"><i class="fas fa-cog"></i></div>
-                    <span>Configuración</span>
+                    <span data-i18n="settings">Configuración</span>
                 </div>
                 <div class="dynamic-dropdown-item" onclick="showHelpSupport()">
                     <div class="icon"><i class="fas fa-question-circle"></i></div>
-                    <span>Ayuda y Soporte</span>
+                    <span data-i18n="help_support">Ayuda y Soporte</span>
                 </div>
                 <div class="dynamic-dropdown-item logout" onclick="logout()">
                     <div class="icon"><i class="fas fa-sign-out-alt"></i></div>
-                    <span>Cerrar Sesión</span>
+                    <span data-i18n="logout">Cerrar Sesión</span>
                 </div>
             </div>
         </div>
@@ -170,15 +169,14 @@
         <!-- Header -->
         <div class="header">
             <div class="logo">
-                 <img src="../assent/img/logo.jpg" alt="AgroMatch Logo" style="height:40px;">
+                <img src="../assent/img/logo-Agro.png" alt="AgroMatch Logo" style="height:40px;">
             </div>
             <div class="header-actions">
-                <!-- NUEVO: Botón de Recomendaciones en el Header -->
-                <button class="btn btn-accent" onclick="showRecomendaciones()" title="Ver trabajos recomendados para ti">
-                    <i class="fas fa-lightbulb"></i> Recomendaciones
+                <button class="btn btn-accent" onclick="showRecomendaciones()" data-i18n-title="view_recommended_jobs">
+                    <i class="fas fa-lightbulb"></i> <span data-i18n="recommendations">Recomendaciones</span>
                 </button>
                 <button class="btn btn-primary" onclick="searchJobs()">
-                    <i class="fas fa-search"></i> Buscar Trabajos
+                    <i class="fas fa-search"></i> <span data-i18n="search_jobs">Buscar Trabajos</span>
                 </button>
                 <div class="notification-icon" onclick="showNotifications()">
                     <i class="fas fa-bell"></i>
@@ -195,37 +193,37 @@
             <div class="main-panel">
                 <!-- Search and Filters -->
                 <div class="search-container">
-                    <input type="text" class="search-bar" placeholder="Buscar trabajos por ubicación, tipo de cultivo, etc..." oninput="filterJobs(this.value)">
+                    <input type="text" class="search-bar" data-i18n-placeholder="search_placeholder" placeholder="Buscar trabajos por ubicación, tipo de cultivo, etc..." oninput="filterJobs(this.value)">
                     <i class="fas fa-search search-icon"></i>
                 </div>
 
                 <div class="filter-container">
-                    <button class="filter-btn active" onclick="filterByType(this, 'todos')">Todos</button>
-                    <button class="filter-btn" onclick="filterByType(this, 'cosecha')">Cosecha</button>
-                    <button class="filter-btn" onclick="filterByType(this, 'siembra')">Siembra</button>
-                    <button class="filter-btn" onclick="filterByType(this, 'mantenimiento')">Mantenimiento</button>
-                    <button class="filter-btn" onclick="filterByType(this, 'recoleccion')">Recolección</button>
+                    <button class="filter-btn active" onclick="filterByType(this, 'todos')" data-i18n="filter_all">Todos</button>
+                    <button class="filter-btn" onclick="filterByType(this, 'cosecha')" data-i18n="filter_harvest">Cosecha</button>
+                    <button class="filter-btn" onclick="filterByType(this, 'siembra')" data-i18n="filter_planting">Siembra</button>
+                    <button class="filter-btn" onclick="filterByType(this, 'mantenimiento')" data-i18n="filter_maintenance">Mantenimiento</button>
+                    <button class="filter-btn" onclick="filterByType(this, 'recoleccion')" data-i18n="filter_collection">Recolección</button>
                 </div>
 
                 <!-- Quick Stats -->
                 <div class="quick-stats">
                     <div class="quick-stat">
                         <div class="quick-stat-number" id="jobsNearCount">0</div>
-                        <div class="quick-stat-label">Trabajos Cerca</div>
+                        <div class="quick-stat-label" data-i18n="jobs_near">Trabajos Cerca</div>
                     </div>
                     <div class="quick-stat">
                         <div class="quick-stat-number" id="applicationsCount">0</div>
-                        <div class="quick-stat-label">Postulaciones</div>
+                        <div class="quick-stat-label">Mis Postulaciones</div>
                     </div>
                     <div class="quick-stat">
                         <div class="quick-stat-number" id="activeJobsCount">0</div>
-                        <div class="quick-stat-label">En Progreso</div>
+                        <div class="quick-stat-label" data-i18n="in_progress">En Progreso</div>
                     </div>
                 </div>
 
                 <div class="section-title">
                     <i class="fas fa-briefcase"></i>
-                    Trabajos Disponibles
+                    <span data-i18n="available_jobs">Trabajos Disponibles</span>
                 </div>
                 
                 <!-- Contenedor de trabajos que se llenará dinámicamente -->
@@ -233,34 +231,25 @@
                     <!-- Los trabajos se cargarán aquí dinámicamente -->
                 </div>
                 
+                <!-- Paginación -->
+                <div class="pagination-container" id="paginationContainer" style="display: none;">
+                    <button class="pagination-btn" id="prevPageBtn" onclick="changePage('prev')">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="pagination-info">
+                        Página <span id="currentPage">1</span> de <span id="totalPages">1</span>
+                    </div>
+                    <button class="pagination-btn" id="nextPageBtn" onclick="changePage('next')">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
                 <!-- Mensaje cuando no hay trabajos -->
                 <div class="no-jobs" id="noJobsMessage" style="display: none;">
                     <div class="no-jobs-content">
                         <i class="fas fa-briefcase"></i>
-                        <h3>No hay trabajos disponibles</h3>
-                        <p>No se encontraron ofertas de trabajo que coincidan con tus criterios.</p>
-                    </div>
-                </div>
-
-                <!-- My Jobs Section -->
-                <div class="my-jobs">
-                    <div class="section-title">
-                        <i class="fas fa-tasks"></i>
-                        Mis Trabajos
-                    </div>
-                    
-                    <!-- Contenedor de mis trabajos que se llenará dinámicamente -->
-                    <div id="myJobsList">
-                        <!-- Los trabajos aceptados se cargarán aquí -->
-                    </div>
-                    
-                    <!-- Mensaje cuando no tengo trabajos -->
-                    <div class="no-my-jobs" id="noMyJobsMessage" style="display: none;">
-                        <div class="no-jobs-content">
-                            <i class="fas fa-tasks"></i>
-                            <h3>No tienes trabajos activos</h3>
-                            <p>Postúlate a las ofertas disponibles para empezar a trabajar.</p>
-                        </div>
+                        <h3 data-i18n="no_jobs_title">No hay trabajos disponibles</h3>
+                        <p data-i18n="no_jobs_text">No se encontraron ofertas de trabajo que coincidan con tus criterios.</p>
                     </div>
                 </div>
             </div>
@@ -271,7 +260,7 @@
                     <div class="profile-avatar profile-photo" id="profileAvatar">
                         <i class="fas fa-user"></i>
                     </div>
-                    <div class="profile-name" id="profileName">Cargando...</div>
+                    <div class="profile-name" id="profileName" data-i18n="loading">Cargando...</div>
                     
                     <div class="rating">
                         <i class="fas fa-star"></i>
@@ -285,11 +274,11 @@
                     <div class="profile-stats">
                         <div class="profile-stat">
                             <div class="stat-value" id="totalJobs">0</div>
-                            <div class="stat-label">Trabajos</div>
+                            <div class="stat-label" data-i18n="jobs">Trabajos</div>
                         </div>
                         <div class="profile-stat">
                             <div class="stat-value" id="totalHours">0h</div>
-                            <div class="stat-label">Horas</div>
+                            <div class="stat-label" data-i18n="hours">Horas</div>
                         </div>
                     </div>
                 </div>
@@ -297,7 +286,7 @@
                 <!-- Map Section -->
                 <div class="section-title">
                     <i class="fas fa-map"></i>
-                    Trabajos Cercanos
+                    <span data-i18n="nearby_jobs">Trabajos Cercanos</span>
                 </div>
                 <div id="map" style="height: 300px; border-radius: 15px; overflow: hidden; border: 2px solid #4a7c59;"></div>
 
@@ -305,7 +294,7 @@
                 <div class="notifications">
                     <div class="section-title">
                         <i class="fas fa-bell"></i>
-                        Notificaciones
+                        <span data-i18n="notifications">Notificaciones</span>
                     </div>
                     
                     <div id="notificationsList">
@@ -317,17 +306,98 @@
     </div>
 
     <!-- Cargar el JavaScript al final -->
+    <script src="../js/language-manager.js"></script>
     <script src="../js/index-trabajador.js"></script>
     <script>
-        // Función para mostrar recomendaciones
         function showRecomendaciones() {
-            // Opción 1: Navegar a página de recomendaciones
             window.location.href = 'recomendaciones.html';
-            
-            // Opción 2: Si prefieres mantenerlo en la misma página con modal/vista
-            // toggleProfileMenu(); // Cerrar el menú del perfil si está abierto
-            // Aquí puedes agregar lógica para mostrar las recomendaciones
         }
+
+        // Variables de paginación
+        let currentPageNum = 1;
+        let jobsPerPage = 3;
+        let allJobsData = [];
+
+        // Función para cambiar de página
+        function changePage(direction) {
+            const totalPages = Math.ceil(allJobsData.length / jobsPerPage);
+            
+            if (direction === 'prev' && currentPageNum > 1) {
+                currentPageNum--;
+            } else if (direction === 'next' && currentPageNum < totalPages) {
+                currentPageNum++;
+            }
+            
+            displayJobsPage();
+        }
+
+        // Función para mostrar trabajos de la página actual
+        function displayJobsPage() {
+            const startIndex = (currentPageNum - 1) * jobsPerPage;
+            const endIndex = startIndex + jobsPerPage;
+            const jobsToDisplay = allJobsData.slice(startIndex, endIndex);
+            
+            const jobsList = document.getElementById('jobsList');
+            if (jobsList) {
+                jobsList.innerHTML = '';
+                jobsToDisplay.forEach(job => {
+                    const jobCard = createJobCard(job);
+                    jobsList.appendChild(jobCard);
+                });
+            }
+            
+            setTimeout(() => cargarFavoritos(), 500);
+            
+            updatePaginationUI();
+        }
+
+        // Función para actualizar la interfaz de paginación
+        function updatePaginationUI() {
+            const totalPages = Math.ceil(allJobsData.length / jobsPerPage);
+            const paginationContainer = document.getElementById('paginationContainer');
+            const currentPageEl = document.getElementById('currentPage');
+            const totalPagesEl = document.getElementById('totalPages');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            if (totalPages <= 1) {
+                if (paginationContainer) paginationContainer.style.display = 'none';
+                return;
+            }
+            
+            if (paginationContainer) paginationContainer.style.display = 'flex';
+            if (currentPageEl) currentPageEl.textContent = currentPageNum;
+            if (totalPagesEl) totalPagesEl.textContent = totalPages;
+            
+            if (prevBtn) {
+                prevBtn.disabled = currentPageNum === 1;
+                prevBtn.style.opacity = currentPageNum === 1 ? '0.5' : '1';
+            }
+            
+            if (nextBtn) {
+                nextBtn.disabled = currentPageNum === totalPages;
+                nextBtn.style.opacity = currentPageNum === totalPages ? '0.5' : '1';
+            }
+        }
+
+        // Sobrescribir displayJobs para usar paginación
+        const originalDisplayJobs = window.displayJobs;
+        window.displayJobs = function(jobs) {
+            allJobsData = jobs;
+            currentPageNum = 1;
+            
+            if (jobs.length === 0) {
+                showNoJobsMessage();
+                const paginationContainer = document.getElementById('paginationContainer');
+                if (paginationContainer) paginationContainer.style.display = 'none';
+                return;
+            }
+            
+            const noJobsMessage = document.getElementById('noJobsMessage');
+            if (noJobsMessage) noJobsMessage.style.display = 'none';
+            
+            displayJobsPage();
+        };
     </script>
 </body>
 </html>

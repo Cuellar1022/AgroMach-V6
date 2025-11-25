@@ -8,7 +8,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: url('../img/img4.gif');
+    background: url('../img/img1.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -414,7 +414,7 @@ body::before {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
 }
 
 .job-card {
@@ -645,41 +645,59 @@ body::before {
     transform: translateY(0);
 }
 
-/* ===== MIS TRABAJOS ===== */
-.my-jobs {
-    margin-top: 40px;
+/* ===== PAGINACIÓN ===== */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 25px 0;
+    margin-top: 20px;
+    border-top: 2px solid rgba(144, 238, 144, 0.2);
 }
 
-.current-job {
-    background: rgba(74, 124, 89, 0.12);
-    border: 2px solid #4a7c59;
+.pagination-btn {
+    background: linear-gradient(135deg, #4a7c59, #1e3a2e);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 50px;
+    box-shadow: 0 4px 12px rgba(74, 124, 89, 0.3);
 }
 
-.job-status {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.pagination-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 124, 89, 0.4);
+    background: linear-gradient(135deg, #5a8c69, #2e4a3e);
 }
 
-.status-confirmed {
-    background: rgba(74, 124, 89, 0.2);
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #cbd5e0;
+    box-shadow: none;
+}
+
+.pagination-info {
+    font-size: 16px;
+    font-weight: 600;
     color: #1e3a2e;
-    border: 1px solid rgba(74, 124, 89, 0.4);
+    padding: 10px 20px;
+    background: rgba(144, 238, 144, 0.15);
+    border-radius: 10px;
+    border: 2px solid rgba(74, 124, 89, 0.2);
 }
 
-.status-pending {
-    background: rgba(249, 115, 22, 0.2);
-    color: #ea580c;
-    border: 1px solid rgba(249, 115, 22, 0.4);
-}
-
-.status-rejected {
-    background: rgba(220, 38, 38, 0.2);
-    color: #dc2626;
-    border: 1px solid rgba(220, 38, 38, 0.4);
+.pagination-info span {
+    color: #4a7c59;
+    font-weight: 800;
 }
 
 /* ===== PANEL LATERAL ===== */
@@ -1114,6 +1132,16 @@ body::before {
         left: 10px !important;
         min-width: auto !important;
     }
+
+    .pagination-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .pagination-btn {
+        width: 100%;
+        max-width: 200px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1125,4 +1153,24 @@ body::before {
     .apply-btn {
         flex: 1;
     }
+}
+
+/* ===== ESTILOS DEL MAPA ===== */
+.leaflet-popup-content-wrapper {
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+}
+
+.leaflet-popup-tip {
+    display: none !important;
+}
+
+.custom-popup .leaflet-popup-content {
+    margin: 0 !important;
+    width: auto !important;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
 }
